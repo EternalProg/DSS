@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>СППР: Платформа дистанційного навчання</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&family=Spectral:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero__content">
+          <p class="hero__eyebrow">СППР · Лабораторна робота</p>
+          <h1>Вибір платформи для дистанційного навчання</h1>
+          <p class="hero__lead">
+            Реєстр альтернатив, критеріїв та матриці оцінювання. Аналітичний блок
+            підготовлено як окремий модуль для подальшої реалізації.
+          </p>
+        </div>
+        <div class="hero__card">
+          <h2>Аналітичний модуль</h2>
+          <p>
+            Поки що це заглушка. У майбутньому тут з'являться розрахунки, ваги та
+            ранжування.
+          </p>
+          <button class="ghost" id="analyticsStatus">Перевірити статус</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel" id="alternatives">
+          <div class="panel__header">
+            <div>
+              <h2>Альтернативи</h2>
+              <p>Платформи дистанційного навчання для порівняння.</p>
+            </div>
+          </div>
+          <form class="panel__form" id="alternativeForm">
+            <input type="hidden" name="id" />
+            <label>
+              Назва
+              <input type="text" name="name" placeholder="Наприклад, Moodle" required />
+            </label>
+            <label>
+              Опис
+              <input
+                type="text"
+                name="description"
+                placeholder="Коротка характеристика"
+              />
+            </label>
+            <div class="form__actions">
+              <button type="submit">Зберегти</button>
+              <button type="button" class="ghost" data-action="reset">
+                Очистити
+              </button>
+            </div>
+          </form>
+          <div class="table" id="alternativesTable"></div>
+        </section>
+
+        <section class="panel" id="criteria">
+          <div class="panel__header">
+            <div>
+              <h2>Критерії</h2>
+              <p>Фактори, за якими оцінюються альтернативи.</p>
+            </div>
+          </div>
+          <form class="panel__form" id="criterionForm">
+            <input type="hidden" name="id" />
+            <label>
+              Назва
+              <input
+                type="text"
+                name="name"
+                placeholder="Наприклад, Вартість використання"
+                required
+              />
+            </label>
+            <label>
+              Тип критерію
+              <select name="type" required>
+                <option value="maximize">maximize</option>
+                <option value="minimize">minimize</option>
+              </select>
+            </label>
+            <label>
+              Опис
+              <input
+                type="text"
+                name="description"
+                placeholder="Що саме оцінюється"
+              />
+            </label>
+            <div class="form__actions">
+              <button type="submit">Зберегти</button>
+              <button type="button" class="ghost" data-action="reset">
+                Очистити
+              </button>
+            </div>
+          </form>
+          <div class="table" id="criteriaTable"></div>
+        </section>
+
+        <section class="panel" id="evaluations">
+          <div class="panel__header">
+            <div>
+              <h2>Оцінки</h2>
+              <p>Заповнення матриці оцінювання альтернатив.</p>
+            </div>
+          </div>
+          <form class="panel__form" id="evaluationForm">
+            <label>
+              Альтернатива
+              <select name="alternativeId" required></select>
+            </label>
+            <label>
+              Критерій
+              <select name="criterionId" required></select>
+            </label>
+            <label>
+              Значення
+              <input
+                type="number"
+                name="value"
+                step="0.01"
+                placeholder="0"
+                required
+              />
+            </label>
+            <div class="form__actions">
+              <button type="submit">Зберегти</button>
+            </div>
+          </form>
+          <div class="table" id="matrixTable"></div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
