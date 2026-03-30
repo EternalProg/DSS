@@ -11,25 +11,33 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div class="page">
       <header class="hero">
         <div class="hero__content">
-          <p class="hero__eyebrow">СППР · Лабораторна робота</p>
+          <p class="hero__eyebrow">СППР (Система підтримки прийняття рішень)</p>
           <h1>Вибір платформи для дистанційного навчання</h1>
           <p class="hero__lead">
-            Реєстр альтернатив, критеріїв та матриці оцінювання. Аналітичний блок
-            підготовлено як окремий модуль для подальшої реалізації.
+            Система підтримки прийняття рішень для вибору оптимальної платформи
+            дистанційного навчання університету.
           </p>
         </div>
         <div class="hero__card">
           <h2>Аналітичний модуль</h2>
           <p>
-            Поки що це заглушка. У майбутньому тут з'являться розрахунки, ваги та
-            ранжування.
+            Три стратегії обчислення: обережна, адитивна та мультиплікативна.
+            Візуалізація результатів та рекомендації.
           </p>
-          <button class="ghost" id="analyticsStatus">Перевірити статус</button>
+          <a href="#analytics" class="hero__cta">
+            <span class="hero__cta-text">Перейти до аналізу</span>
+            <span class="hero__cta-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 17L17 7M17 7H7M17 7V17"/>
+              </svg>
+            </span>
+          </a>
         </div>
       </header>
 
@@ -112,7 +120,7 @@
           <div class="panel__header">
             <div>
               <h2>Оцінки</h2>
-              <p>Заповнення матриці оцінювання альтернатив.</p>
+              <p>Заповнення матриці оцінювання альтернатив. <span class="hint">Подвійний клік на комірку для редагування.</span></p>
             </div>
           </div>
           <form class="panel__form" id="evaluationForm">
@@ -140,7 +148,123 @@
           </form>
           <div class="table" id="matrixTable"></div>
         </section>
+
+        <section class="panel" id="weights">
+          <div class="panel__header">
+            <div>
+              <h2>Ваги критеріїв</h2>
+              <p>Встановіть важливість кожного критерію (1-10).</p>
+            </div>
+          </div>
+          <div class="weights-grid" id="weightsGrid"></div>
+        </section>
+
+        <section class="panel panel--wide" id="analytics">
+          <div class="panel__header">
+            <div>
+              <h2>Аналіз та рекомендації</h2>
+              <p>Виберіть стратегії обчислення та отримайте рекомендацію.</p>
+            </div>
+          </div>
+
+          <div class="analytics-controls">
+            <div class="strategy-selection">
+              <h3>Стратегії обчислення</h3>
+              <div class="strategy-checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="strategy" value="cautious" checked />
+                  <span class="checkbox-text">
+                    <strong>Обережна</strong>
+                    <small>Q(Aᵢ) = min(wⱼ × xᵢⱼ)</small>
+                  </span>
+                  <span class="tooltip">
+                    <span class="tooltip__icon">?</span>
+                    <span class="tooltip__content">Оцінка за найгіршим критерієм. Підходить для критичних систем, де неприпустимі слабкі місця.</span>
+                  </span>
+                </label>
+                <label class="checkbox-label checkbox-label--recommended">
+                  <input type="checkbox" name="strategy" value="additive" checked />
+                  <span class="checkbox-text">
+                    <strong>Адитивна</strong>
+                    <span class="recommended-badge">Рекомендована</span>
+                    <small>Q(Aᵢ) = Σ(wⱼ × xᵢⱼ)</small>
+                  </span>
+                  <span class="tooltip">
+                    <span class="tooltip__icon">?</span>
+                    <span class="tooltip__content">Адитивна стратегія є найпоширенішою і дозволяє критеріям компенсувати один одного.</span>
+                  </span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="strategy" value="multiplicative" checked />
+                  <span class="checkbox-text">
+                    <strong>Мультиплікативна</strong>
+                    <small>Q(Aᵢ) = Π(xᵢⱼ^wⱼ)</small>
+                  </span>
+                  <span class="tooltip">
+                    <span class="tooltip__icon">?</span>
+                    <span class="tooltip__content">Добуток оцінок у степені ваг. Низькі оцінки сильніше впливають на результат.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+            <button type="button" id="calculateBtn" class="calculate-btn">
+              Розрахувати
+            </button>
+          </div>
+
+          <div class="analytics-results" id="analyticsResults" style="display: none;">
+            <div class="recommendation-card" id="recommendationCard">
+              <h3>Рекомендація</h3>
+              <div id="recommendationContent"></div>
+            </div>
+
+            <div class="results-section">
+              <h3>Таблиця результатів</h3>
+              <div class="table" id="resultsTable"></div>
+            </div>
+
+            <div class="charts-section">
+              <h3>Візуалізація</h3>
+              <div class="charts-row">
+                <div class="chart-wrapper chart-wrapper--bar">
+                  <canvas id="barChartCautious"></canvas>
+                </div>
+                <div class="chart-wrapper chart-wrapper--bar">
+                  <canvas id="barChartAdditive"></canvas>
+                </div>
+                <div class="chart-wrapper chart-wrapper--bar">
+                  <canvas id="barChartMultiplicative"></canvas>
+                </div>
+              </div>
+              <div class="chart-wrapper chart-wrapper--radar">
+                <canvas id="radarChart"></canvas>
+              </div>
+            </div>
+
+            <div class="explanations-section" id="explanationsSection">
+              <h3>Пояснення результатів</h3>
+              <div id="explanationsContent"></div>
+            </div>
+          </div>
+        </section>
       </main>
+    </div>
+    <div class="modal" id="confirmModal" aria-hidden="true">
+      <div class="modal__backdrop" data-action="close"></div>
+      <div
+        class="modal__content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmTitle"
+        aria-describedby="confirmMessage"
+      >
+        <h3 id="confirmTitle">Підтвердження</h3>
+        <p id="confirmMessage"></p>
+        <div class="modal__actions">
+          <button class="ghost" id="confirmCancel">Скасувати</button>
+          <button class="danger" id="confirmOk">Видалити</button>
+        </div>
+      </div>
     </div>
     <script src="app.js"></script>
   </body>
