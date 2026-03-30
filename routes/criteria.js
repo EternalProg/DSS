@@ -30,6 +30,7 @@ router.post("/", async (req, res) => {
       name: name.trim(),
       type,
       description: description ? description.trim() : "",
+      weight: 5,
       createdAt: new Date()
     });
     res.status(201).json({ _id: result.insertedId });
@@ -83,6 +84,63 @@ router.put("/:id", async (req, res) => {
       return res.status(409).json({ message: "Criterion name already exists." });
     }
     res.status(500).json({ message: "Failed to update criterion." });
+  }
+});
+
+router.patch("/:id/weight", async (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+  const { weight } = req.body;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid criterion id." });
+  }
+
+  const numericWeight = Number(weight);
+  if (!Number.isFinite(numericWeight) || numericWeight < 1 || numericWeight > 10) {
+    return res.status(400).json({ message: "Weight must be a number from 1 to 10." });
+  }
+
+  try {
+    const result = await db.collection("criteria").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { weight: numericWeight, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Criterion not found." });
+    }
+
+    res.json({ message: "Weight updated." });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update weight." });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid criterion id." });
+  }
+
+  const criterionId = new ObjectId(id);
+
+  try {
+    const result = await db.collection("criteria").deleteOne({
+      _id: criterionId
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Criterion not found." });
+    }
+
+    await db.collection("evaluations").deleteMany({ criterionId });
+
+    res.json({ message: "Criterion deleted." });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete criterion." });
   }
 });
 

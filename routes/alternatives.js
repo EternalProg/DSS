@@ -71,4 +71,31 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+router.delete("/:id", async (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid alternative id." });
+  }
+
+  const alternativeId = new ObjectId(id);
+
+  try {
+    const result = await db.collection("alternatives").deleteOne({
+      _id: alternativeId
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Alternative not found." });
+    }
+
+    await db.collection("evaluations").deleteMany({ alternativeId });
+
+    res.json({ message: "Alternative deleted." });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete alternative." });
+  }
+});
+
 module.exports = router;
