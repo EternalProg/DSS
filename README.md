@@ -1,42 +1,60 @@
-# DSS: Distance Learning Platform Selection
+# СППР: вибір платформи дистанційного навчання
 
-Baseline decision support system for storing alternatives, criteria, and evaluations. The analytics block is not implemented yet, but a placeholder API endpoint `/api/analytics` is provided.
+Вебзастосунок для підтримки прийняття рішень під час вибору платформи дистанційного навчання. Система дозволяє зберігати альтернативи, критерії та оцінки, формувати матрицю оцінювання й виконувати аналітичний розрахунок за кількома стратегіями.
 
-## Quick start
+## Можливості
 
-1. Install dependencies:
+- CRUD для альтернатив і критеріїв;
+- введення оцінок через форму або inline-редагування матриці;
+- налаштування ваг критеріїв (1-10);
+- аналітика за трьома стратегіями: обережна, адитивна, мультиплікативна;
+- рекомендація переможця та візуалізація результатів через Chart.js.
+
+## Швидкий старт
+
+1. Встановіть залежності:
    ```bash
    npm install
    ```
 
-2. Ensure MongoDB is running (default `mongodb://127.0.0.1:27017`, database `dss_platform_selection`).
+2. Переконайтесь, що MongoDB запущено.
+   За замовчуванням використовується:
+   - `MONGO_URL=mongodb://127.0.0.1:27017`
+   - `MONGO_DB=learning_platform_selection`
 
-3. Seed the database:
+3. (Опційно) Заповніть БД тестовими даними:
    ```bash
    npm run seed
    ```
+   Команда очищає поточні дані в колекціях `alternatives`, `criteria`, `evaluations` і записує демо-набір.
 
-4. Start the server:
+4. Запустіть сервер:
    ```bash
    npm start
    ```
 
-5. Open in a browser:
-   ```
+5. Відкрийте в браузері:
+   ```text
    http://localhost:3000
    ```
 
-## Project structure
+## Налаштування через змінні середовища
 
-- `server.js` - Express server entrypoint.
-- `services/db.js` - MongoDB connection and indexes.
-- `routes/` - REST API for alternatives, criteria, evaluations, and matrix.
-- `public/` - UI assets.
-- `scripts/seed.js` - Demo data.
-- `docs/` - Architecture, ER diagram, and sample data.
+- `PORT` - порт HTTP-сервера (типово `3000`);
+- `MONGO_URL` - рядок підключення до MongoDB;
+- `MONGO_DB` - назва бази даних.
 
-## Documentation
+## Структура проєкту
 
-- Architecture: `docs/architecture.md`
-- ER diagram: `docs/er-diagram.mmd`
-- Sample data: `docs/sample-data.md`
+- `server.js` - точка входу Express-сервера;
+- `services/db.js` - підключення до MongoDB та індекси;
+- `services/analytics.js` - стратегії обчислення та пояснення результатів;
+- `routes/` - REST API для альтернатив, критеріїв, оцінок, матриці та аналітики;
+- `public/` - клієнтський інтерфейс (HTML/CSS/JS);
+- `scripts/seed.js` - скрипт заповнення тестовими даними;
+- `docs/` - технічна документація.
+
+## Документація
+
+- Архітектура системи: `docs/architecture.md`
+- Приклад вхідних даних: `docs/sample-data.md`
