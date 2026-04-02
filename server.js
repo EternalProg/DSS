@@ -5,6 +5,7 @@ const alternativesRouter = require("./routes/alternatives");
 const criteriaRouter = require("./routes/criteria");
 const evaluationsRouter = require("./routes/evaluations");
 const matrixRouter = require("./routes/matrix");
+const analyticsRouter = require("./routes/analytics");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20,19 +21,7 @@ app.use("/api/alternatives", alternativesRouter);
 app.use("/api/criteria", criteriaRouter);
 app.use("/api/evaluations", evaluationsRouter);
 app.use("/api/matrix", matrixRouter);
-
-app.get("/api/analytics", (req, res) => {
-  res.status(501).json({
-    message:
-      "Analytics module is not implemented yet. This endpoint is a placeholder.",
-    plannedCapabilities: [
-      "compute alternative scores",
-      "apply criteria weights",
-      "rank alternatives",
-      "generate recommendations"
-    ]
-  });
-});
+app.use("/api/analytics", analyticsRouter);
 
 connectToDb()
   .then(() => {
