@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const { getDb, connectToDb } = require("./services/db");
 const alternativesRouter = require("./routes/alternativesRoutes");
@@ -19,7 +20,14 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
+// Static frontend:
+// - in dev, Vite serves UI separately, but backend can still serve /public.
+// - after `vite build`, serve /dist.
+const distDir = path.join(__dirname, "dist");
+const publicDir = path.join(__dirname, "public");
+const staticDir = fs.existsSync(distDir) ? distDir : publicDir;
+app.use(express.static(staticDir));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -38,6 +46,13 @@ app.use("/api/rules", rulesRouter);
 app.use("/api/voting", votingRouter);
 
 app.use(errorHandler);
+
+// SPA fallback (avoid touching API paths)
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) return next();
+  const indexPath = path.join(staticDir, "index.html");
+  return res.sendFile(indexPath);
+});
 
 connectToDb()
   .then(() => {
