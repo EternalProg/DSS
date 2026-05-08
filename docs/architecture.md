@@ -27,27 +27,33 @@ UI відповідає за:
 - запуск аналітичних стратегій і формування рекомендацій;
 - доступ до MongoDB через сервісний шар.
 
-Архітектурно сервер поділено на чіткі шари (Controller / Service / Data + окремий шар обчислень):
+Архітектурно сервер поділено на чіткі шари (Routes / Controller / Service / Data + окремий шар обчислень):
 
-1) **Контролери (`controllers/`)** - маршрутизація та REST API.
+1) **Маршрути (`routes/`)** - тільки прив'язка URL + HTTP-методів до контролерів.
+Routes-шар:
+- не містить бізнес-логіки;
+- підключає middleware (парсинг body для імпорту, тощо);
+- делегує обробку контролерам.
+
+2) **Контролери (`controllers/`)** - обробники запитів.
 Контролер:
-- приймає HTTP-запит;
+- читає параметри/тіло запиту;
 - викликає сервіс;
-- повертає HTTP-відповідь (JSON);
-- не виконує прямі запити до MongoDB.
+- формує відповідь (JSON, status codes);
+- не звертається напряму до MongoDB.
 
-2) **Сервіси (`services/`)** - бізнес-логіка та оркестрація.
+3) **Сервіси (`services/`)** - бізнес-логіка та оркестрація.
 Сервіс:
 - виконує валідацію доменних правил;
 - викликає Data-шар (репозиторії);
 - готує дані для шару обчислень і інтерпретує результати.
 
-3) **Дані (`data/`)** - доступ до MongoDB (репозиторії).
+4) **Дані (`data/`)** - доступ до MongoDB (репозиторії).
 Data-шар:
 - інкапсулює `db.collection(...).find/update/insert/...`;
 - повертає “сирі” результати БД (matchedCount, deletedCount, тощо).
 
-4) **Обчислення (`computations/`)** - чисті алгоритми.
+5) **Обчислення (`computations/`)** - чисті алгоритми.
 Цей шар не виконує I/O та не звертається до БД. Він приймає дані як параметри і повертає результат.
 
 Додатково:
@@ -88,7 +94,19 @@ Data-шар:
 .
 ├── server.js                # Точка входу, налаштування Express
 ├── package.json             # Залежності та npm-скрипти
-├── controllers/             # HTTP API (контролери)
+├── routes/                  # URL -> controller wiring
+│   ├── alternativesRoutes.js
+│   ├── criteriaRoutes.js
+│   ├── evaluationsRoutes.js
+│   ├── matrixRoutes.js
+│   ├── analyticsRoutes.js
+│   ├── importRoutes.js
+│   ├── consensusRoutes.js
+│   ├── expertsRoutes.js
+│   ├── triadsRoutes.js
+│   ├── rulesRoutes.js
+│   └── votingRoutes.js
+├── controllers/             # HTTP handlers (thin)
 │   ├── alternativesController.js
 │   ├── criteriaController.js
 │   ├── evaluationsController.js
@@ -119,6 +137,9 @@ Data-шар:
 │   ├── evaluationsRepo.js
 │   ├── expertsRepo.js
 │   └── ...
+├── middleware/              # Express middleware
+│   ├── asyncHandler.js
+│   └── errorHandler.js
 ├── validation/              # Валідація даних
 │   └── common.js
 ├── utils/                   # Утиліти (помилки, HTTP)
@@ -138,11 +159,12 @@ Data-шар:
 
 ### Розділення відповідальності (Separation of Concerns)
 
-1. `controllers/` - HTTP транспорт (Express, маршрутизація).
-2. `services/` - бізнес-логіка, сценарії, використання репозиторіїв.
-3. `data/` - доступ до MongoDB.
-4. `computations/` - чисті обчислення.
-5. `public/` - презентаційний рівень (UI).
+1. `routes/` - тільки маршрутизація (URL + методи + middleware).
+2. `controllers/` - HTTP-обробники (thin controllers).
+3. `services/` - бізнес-логіка, сценарії, використання репозиторіїв.
+4. `data/` - доступ до MongoDB.
+5. `computations/` - чисті обчислення.
+6. `public/` - презентаційний рівень (UI).
 
 ### Модульність
 

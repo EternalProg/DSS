@@ -51,8 +51,10 @@
 ## Структура проєкту
 
 - `server.js` - точка входу Express-сервера;
+- `app.js` - конфігурація Express (middleware, routes, static);
 - `services/db.js` - підключення до MongoDB та індекси;
 - `computations/analytics.js` - стратегії обчислення та пояснення результатів;
+- `routes/` - прив'язка URL/методів до контролерів;
 - `controllers/` - REST API (Controller-шар);
 - `services/` - бізнес-логіка та оркестрація (Service-шар);
 - `data/` - доступ до MongoDB (Data-шар);
