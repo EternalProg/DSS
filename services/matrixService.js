@@ -1,13 +1,13 @@
-const express = require("express");
-const { getDb } = require("../services/db");
+const alternativesRepo = require("../data/alternativesRepo");
+const criteriaRepo = require("../data/criteriaRepo");
+const evaluationsRepo = require("../data/evaluationsRepo");
 
-const router = express.Router();
-
-router.get("/", async (req, res) => {
-  const db = getDb();
-  const alternatives = await db.collection("alternatives").find({}).toArray();
-  const criteria = await db.collection("criteria").find({}).toArray();
-  const evaluations = await db.collection("evaluations").find({}).toArray();
+async function getMatrix() {
+  const [alternatives, criteria, evaluations] = await Promise.all([
+    alternativesRepo.listAll(),
+    criteriaRepo.listAll(),
+    evaluationsRepo.listAll()
+  ]);
 
   const evaluationMap = new Map();
   evaluations.forEach((evaluation) => {
@@ -35,7 +35,7 @@ router.get("/", async (req, res) => {
     };
   });
 
-  res.json({ alternatives, criteria, rows });
-});
+  return { alternatives, criteria, rows };
+}
 
-module.exports = router;
+module.exports = { getMatrix };

@@ -1,17 +1,19 @@
 const path = require("path");
 const express = require("express");
 const { getDb, connectToDb } = require("./services/db");
-const alternativesRouter = require("./routes/alternatives");
-const criteriaRouter = require("./routes/criteria");
-const evaluationsRouter = require("./routes/evaluations");
-const matrixRouter = require("./routes/matrix");
-const analyticsRouter = require("./routes/analytics");
-const importRouter = require("./routes/import");
-const consensusRouter = require("./routes/consensus");
-const expertsRouter = require("./routes/experts");
-const triadsRouter = require("./routes/triads");
-const rulesRouter = require("./routes/rules");
-const votingRouter = require("./routes/voting");
+const alternativesRouter = require("./routes/alternativesRoutes");
+const criteriaRouter = require("./routes/criteriaRoutes");
+const evaluationsRouter = require("./routes/evaluationsRoutes");
+const matrixRouter = require("./routes/matrixRoutes");
+const analyticsRouter = require("./routes/analyticsRoutes");
+const importRouter = require("./routes/importRoutes");
+const consensusRouter = require("./routes/consensusRoutes");
+const expertsRouter = require("./routes/expertsRoutes");
+const triadsRouter = require("./routes/triadsRoutes");
+const rulesRouter = require("./routes/rulesRoutes");
+const votingRouter = require("./routes/votingRoutes");
+
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -34,6 +36,8 @@ app.use("/api/experts", expertsRouter);
 app.use("/api/triads", triadsRouter);
 app.use("/api/rules", rulesRouter);
 app.use("/api/voting", votingRouter);
+
+app.use(errorHandler);
 
 connectToDb()
   .then(() => {

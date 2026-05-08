@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 const { connectToDb, getDb, closeDb } = require("../services/db");
-const consensus = require("../services/consensus");
+const consensus = require("../computations/consensus");
 
 async function main() {
   await connectToDb();

@@ -52,8 +52,11 @@
 
 - `server.js` - точка входу Express-сервера;
 - `services/db.js` - підключення до MongoDB та індекси;
-- `services/analytics.js` - стратегії обчислення та пояснення результатів;
-- `routes/` - REST API для альтернатив, критеріїв, оцінок, матриці та аналітики;
+- `computations/analytics.js` - стратегії обчислення та пояснення результатів;
+- `controllers/` - REST API (Controller-шар);
+- `services/` - бізнес-логіка та оркестрація (Service-шар);
+- `data/` - доступ до MongoDB (Data-шар);
+- `computations/` - чисті алгоритми (без I/O);
 - `public/` - клієнтський інтерфейс (HTML/CSS/JS);
 - `scripts/seed.js` - скрипт заповнення тестовими даними;
 - `docs/` - технічна документація.
