@@ -9,6 +9,10 @@
 - налаштування ваг критеріїв (1-10);
 - аналітика за трьома стратегіями: обережна, адитивна, мультиплікативна;
 - рекомендація переможця та візуалізація результатів через Chart.js.
+ - узгодження експертних оцінок (Lab2):
+  - E7 (алгебраїчний): утилітарний та егалітарний варіанти для числових оцінок;
+  - E1 (статистичний): середньозважене значення + дисперсія σ²;
+  - E2 (статистичний): триадні оцінки (оптимістична/реалістична/песимістична) + дисперсія σ².
 
 ## Швидкий старт
 
@@ -58,3 +62,80 @@
 
 - Архітектура системи: `docs/architecture.md`
 - Приклад вхідних даних: `docs/sample-data.md`
+
+## API: узгодження експертних оцінок (Lab2)
+
+### Перелік методів
+
+`GET /api/consensus/methods`
+
+### E7: алгебраїчний метод (експертиза 7)
+
+Потрібні дані: `experts` + `expertEvaluations` (імпорт CSV з Google Forms).
+
+`POST /api/consensus/calculate`
+
+```json
+{ "method": "E7", "variant": "utilitarian" }
+```
+
+або
+
+```json
+{ "method": "E7", "variant": "egalitarian" }
+```
+
+Вихід: узгоджена матриця значень `cells[]` для кожної пари (alternative, criterion).
+
+### E1: статистичний метод (експертиза 1)
+
+Потрібні дані: `experts` + `expertEvaluations` (імпорт CSV з Google Forms).
+
+`POST /api/consensus/calculate`
+
+```json
+{ "method": "E1" }
+```
+
+Вихід: узгоджена матриця значень `cells[]` (weighted mean) та дисперсія `σ²` у `meta`.
+
+### E2: статистичний метод (експертиза 2)
+
+Потрібні дані: `experts.psychType` + `expertTriads` (введення через API).
+
+1. (Опційно) Виставити психологічний тип експерта:
+
+`PATCH /api/experts/:id`
+
+```json
+{ "psychType": "realist" }
+```
+
+2. Додати триадну оцінку (optimistic <= realistic <= pessimistic):
+
+`POST /api/triads`
+
+```json
+{
+  "expertId": "...",
+  "alternativeId": "...",
+  "criterionId": "...",
+  "optimistic": 3,
+  "realistic": 5,
+  "pessimistic": 7
+}
+```
+
+3. Обчислити E2:
+
+`POST /api/consensus/calculate`
+
+```json
+{ "method": "E2" }
+```
+
+Можна додати `p` (ймовірність похибки) для інтервалу довіри (табличний t, df<=20):
+
+```json
+{ "method": "E2", "p": 0.05 }
+```

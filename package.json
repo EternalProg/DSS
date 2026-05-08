@@ -5,8 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "seed": "node scripts/seed.js"
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js",
+    "smoke:consensus": "node scripts/consensus-smoke.js"
   },
   "dependencies": {
     "express": "^4.19.2",

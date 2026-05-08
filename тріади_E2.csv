@@ -1,0 +1,169 @@
+expert,alternative,criterion,optimistic,realistic,pessimistic
+E1,Moodle,C1,4,6,8
+E1,Google Classroom,C1,1,3,5
+E1,Canvas LMS,C1,3,5,8
+E1,Власний вебсайт,C1,7,9,10
+E1,Moodle,C2,6,8,9
+E1,Google Classroom,C2,4,6,7
+E1,Canvas LMS,C2,7,9,10
+E1,Власний вебсайт,C2,5,7,8
+E1,Moodle,C3,6,7,8
+E1,Google Classroom,C3,7,8,9
+E1,Canvas LMS,C3,7,8,10
+E1,Власний вебсайт,C3,4,5,6
+E1,Moodle,C4,4,6,8
+E1,Google Classroom,C4,7,9,10
+E1,Canvas LMS,C4,7,9,10
+E1,Власний вебсайт,C4,2,4,6
+E1,Moodle,C5,7,8,9
+E1,Google Classroom,C5,8,9,10
+E1,Canvas LMS,C5,7,8,10
+E1,Власний вебсайт,C5,2,3,4
+E1,Moodle,C6,6,8,9
+E1,Google Classroom,C6,5,7,8
+E1,Canvas LMS,C6,7,9,10
+E1,Власний вебсайт,C6,2,4,5
+E2,Moodle,C1,4,7,9
+E2,Google Classroom,C1,1,2,4
+E2,Canvas LMS,C1,3,6,9
+E2,Власний вебсайт,C1,5,8,10
+E2,Moodle,C2,6,7,8
+E2,Google Classroom,C2,5,6,7
+E2,Canvas LMS,C2,8,9,10
+E2,Власний вебсайт,C2,5,6,7
+E2,Moodle,C3,4,6,7
+E2,Google Classroom,C3,7,9,10
+E2,Canvas LMS,C3,7,9,10
+E2,Власний вебсайт,C3,2,4,5
+E2,Moodle,C4,3,5,7
+E2,Google Classroom,C4,6,8,10
+E2,Canvas LMS,C4,7,9,10
+E2,Власний вебсайт,C4,1,3,5
+E2,Moodle,C5,5,7,8
+E2,Google Classroom,C5,8,10,10
+E2,Canvas LMS,C5,7,9,10
+E2,Власний вебсайт,C5,1,2,3
+E2,Moodle,C6,6,7,9
+E2,Google Classroom,C6,5,6,8
+E2,Canvas LMS,C6,7,8,9
+E2,Власний вебсайт,C6,2,3,5
+E3,Moodle,C1,4,6,8
+E3,Google Classroom,C1,1,3,5
+E3,Canvas LMS,C1,3,5,8
+E3,Власний вебсайт,C1,8,10,10
+E3,Moodle,C2,6,8,9
+E3,Google Classroom,C2,3,5,6
+E3,Canvas LMS,C2,7,9,10
+E3,Власний вебсайт,C2,5,7,8
+E3,Moodle,C3,6,7,8
+E3,Google Classroom,C3,7,8,9
+E3,Canvas LMS,C3,8,9,10
+E3,Власний вебсайт,C3,3,4,5
+E3,Moodle,C4,4,6,8
+E3,Google Classroom,C4,7,9,10
+E3,Canvas LMS,C4,6,8,10
+E3,Власний вебсайт,C4,2,4,6
+E3,Moodle,C5,7,8,10
+E3,Google Classroom,C5,8,9,10
+E3,Canvas LMS,C5,8,9,10
+E3,Власний вебсайт,C5,2,3,5
+E3,Moodle,C6,6,8,10
+E3,Google Classroom,C6,5,7,9
+E3,Canvas LMS,C6,7,9,10
+E3,Власний вебсайт,C6,2,4,6
+E4,Moodle,C1,2,5,7
+E4,Google Classroom,C1,1,4,6
+E4,Canvas LMS,C1,2,5,8
+E4,Власний вебсайт,C1,6,9,10
+E4,Moodle,C2,7,8,9
+E4,Google Classroom,C2,5,6,7
+E4,Canvas LMS,C2,9,10,10
+E4,Власний вебсайт,C2,5,6,7
+E4,Moodle,C3,5,7,8
+E4,Google Classroom,C3,6,8,9
+E4,Canvas LMS,C3,7,9,10
+E4,Власний вебсайт,C3,1,3,4
+E4,Moodle,C4,4,6,8
+E4,Google Classroom,C4,7,9,10
+E4,Canvas LMS,C4,6,8,10
+E4,Власний вебсайт,C4,2,4,6
+E4,Moodle,C5,7,9,10
+E4,Google Classroom,C5,7,9,10
+E4,Canvas LMS,C5,7,9,10
+E4,Власний вебсайт,C5,1,2,4
+E4,Moodle,C6,7,8,10
+E4,Google Classroom,C6,5,6,8
+E4,Canvas LMS,C6,8,9,10
+E4,Власний вебсайт,C6,2,3,5
+E5,Moodle,C1,5,7,9
+E5,Google Classroom,C1,1,2,4
+E5,Canvas LMS,C1,4,6,9
+E5,Власний вебсайт,C1,8,10,10
+E5,Moodle,C2,5,7,8
+E5,Google Classroom,C2,5,7,8
+E5,Canvas LMS,C2,7,9,10
+E5,Власний вебсайт,C2,4,6,7
+E5,Moodle,C3,5,6,8
+E5,Google Classroom,C3,7,8,10
+E5,Canvas LMS,C3,9,10,10
+E5,Власний вебсайт,C3,3,4,6
+E5,Moodle,C4,3,5,7
+E5,Google Classroom,C4,7,9,10
+E5,Canvas LMS,C4,7,9,10
+E5,Власний вебсайт,C4,1,3,5
+E5,Moodle,C5,6,7,9
+E5,Google Classroom,C5,8,9,10
+E5,Canvas LMS,C5,9,10,10
+E5,Власний вебсайт,C5,1,2,4
+E5,Moodle,C6,5,7,9
+E5,Google Classroom,C6,4,6,8
+E5,Canvas LMS,C6,6,8,9
+E5,Власний вебсайт,C6,1,3,5
+E6,Moodle,C1,3,6,8
+E6,Google Classroom,C1,1,3,5
+E6,Canvas LMS,C1,1,4,7
+E6,Власний вебсайт,C1,7,10,10
+E6,Moodle,C2,7,8,10
+E6,Google Classroom,C2,4,5,7
+E6,Canvas LMS,C2,8,9,10
+E6,Власний вебсайт,C2,6,7,9
+E6,Moodle,C3,5,7,9
+E6,Google Classroom,C3,6,8,10
+E6,Canvas LMS,C3,6,8,9
+E6,Власний вебсайт,C3,2,4,6
+E6,Moodle,C4,4,6,8
+E6,Google Classroom,C4,6,8,10
+E6,Canvas LMS,C4,7,9,10
+E6,Власний вебсайт,C4,2,4,6
+E6,Moodle,C5,6,8,10
+E6,Google Classroom,C5,7,9,10
+E6,Canvas LMS,C5,7,9,10
+E6,Власний вебсайт,C5,1,3,5
+E6,Moodle,C6,8,9,10
+E6,Google Classroom,C6,6,7,9
+E6,Canvas LMS,C6,8,9,10
+E6,Власний вебсайт,C6,3,4,6
+E7,Moodle,C1,5,7,10
+E7,Google Classroom,C1,1,2,5
+E7,Canvas LMS,C1,4,6,8
+E7,Власний вебсайт,C1,7,9,10
+E7,Moodle,C2,5,7,9
+E7,Google Classroom,C2,4,6,8
+E7,Canvas LMS,C2,7,9,10
+E7,Власний вебсайт,C2,5,7,9
+E7,Moodle,C3,5,6,8
+E7,Google Classroom,C3,7,8,10
+E7,Canvas LMS,C3,8,9,10
+E7,Власний вебсайт,C3,3,4,6
+E7,Moodle,C4,3,5,7
+E7,Google Classroom,C4,7,9,10
+E7,Canvas LMS,C4,7,9,10
+E7,Власний вебсайт,C4,1,3,5
+E7,Moodle,C5,6,7,9
+E7,Google Classroom,C5,9,10,10
+E7,Canvas LMS,C5,8,9,10
+E7,Власний вебсайт,C5,1,2,4
+E7,Moodle,C6,5,7,9
+E7,Google Classroom,C6,4,6,8
+E7,Canvas LMS,C6,6,8,9
+E7,Власний вебсайт,C6,1,3,5

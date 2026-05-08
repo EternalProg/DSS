@@ -6,7 +6,13 @@ async function seed() {
   await Promise.all([
     db.collection("alternatives").deleteMany({}),
     db.collection("criteria").deleteMany({}),
-    db.collection("evaluations").deleteMany({})
+    db.collection("evaluations").deleteMany({}),
+    // Keep expert-related collections consistent with the seeded model.
+    // Otherwise consensus/apply can reference stale alternative/criterion ids.
+    db.collection("experts").deleteMany({}),
+    db.collection("expertEvaluations").deleteMany({}),
+    db.collection("expertRankings").deleteMany({}),
+    db.collection("expertTriads").deleteMany({})
   ]);
 
   const alternatives = [
@@ -30,36 +36,42 @@ async function seed() {
 
   const criteria = [
     {
+      code: "C1",
       name: "Вартість використання",
       type: "minimize",
       description: "Витрати на впровадження та підтримку",
       weight: 7
     },
     {
+      code: "C2",
       name: "Функціональні можливості",
       type: "maximize",
       description: "Наявність інструментів для навчання",
       weight: 9
     },
     {
+      code: "C3",
       name: "Зручність використання",
       type: "maximize",
       description: "Зрозумілий інтерфейс для викладачів і студентів",
       weight: 8
     },
     {
+      code: "C4",
       name: "Інтеграція з іншими сервісами",
       type: "maximize",
       description: "Підключення до зовнішніх сервісів",
       weight: 6
     },
     {
+      code: "C5",
       name: "Надійність роботи системи",
       type: "maximize",
       description: "Стабільність та масштабованість",
       weight: 9
     },
     {
+      code: "C6",
       name: "Технічна підтримка та оновлення",
       type: "maximize",
       description: "Доступність підтримки та регулярність оновлень",

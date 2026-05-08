@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const db = getDb();
-  const { name, type, description } = req.body;
+  const { name, type, description, code } = req.body;
 
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "Name is required." });
@@ -26,11 +26,19 @@ router.post("/", async (req, res) => {
   }
 
   try {
+    const normalizedCode =
+      code != null && String(code).trim() ? String(code).trim().toUpperCase() : null;
+    if (normalizedCode && !/^C\d+$/.test(normalizedCode)) {
+      return res
+        .status(400)
+        .json({ message: "Code повинен мати вигляд C<number> (наприклад, C1)." });
+    }
+
     const result = await db.collection("criteria").insertOne({
       name: name.trim(),
       type,
+      ...(normalizedCode ? { code: normalizedCode } : {}),
       description: description ? description.trim() : "",
-      weight: 5,
       createdAt: new Date()
     });
     res.status(201).json({ _id: result.insertedId });
@@ -45,7 +53,7 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const db = getDb();
   const { id } = req.params;
-  const { name, type, description } = req.body;
+  const { name, type, description, code } = req.body;
 
   if (!ObjectId.isValid(id)) {
     return res.status(400).json({ message: "Invalid criterion id." });
@@ -61,17 +69,35 @@ router.put("/:id", async (req, res) => {
       .json({ message: "Type must be 'maximize' or 'minimize'." });
   }
 
+  const hasCodeField = Object.prototype.hasOwnProperty.call(req.body, "code");
+  const normalizedCode =
+    code != null && String(code).trim() ? String(code).trim().toUpperCase() : null;
+  if (hasCodeField && normalizedCode && !/^C\d+$/.test(normalizedCode)) {
+    return res
+      .status(400)
+      .json({ message: "Code повинен мати вигляд C<number> (наприклад, C1)." });
+  }
+
   try {
+    const setDoc = {
+      name: name.trim(),
+      type,
+      description: description ? description.trim() : "",
+      updatedAt: new Date()
+    };
+
+    const updateDoc = { $set: setDoc };
+    if (hasCodeField) {
+      if (normalizedCode) {
+        updateDoc.$set.code = normalizedCode;
+      } else {
+        updateDoc.$unset = { code: "" };
+      }
+    }
+
     const result = await db.collection("criteria").updateOne(
       { _id: new ObjectId(id) },
-      {
-        $set: {
-          name: name.trim(),
-          type,
-          description: description ? description.trim() : "",
-          updatedAt: new Date()
-        }
-      }
+      updateDoc
     );
 
     if (result.matchedCount === 0) {
@@ -114,6 +140,54 @@ router.patch("/:id/weight", async (req, res) => {
     res.json({ message: "Weight updated." });
   } catch (error) {
     res.status(500).json({ message: "Failed to update weight." });
+  }
+});
+
+router.patch("/:id/threshold", async (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+  const { enabled, value, note } = req.body ?? {};
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid criterion id." });
+  }
+
+  const isEnabled = Boolean(enabled);
+  const numericValue = value === "" || value == null ? null : Number(value);
+  // Allow enabling a threshold before the user types a numeric value.
+  // When value is provided, it must be numeric.
+  if (numericValue != null && !Number.isFinite(numericValue)) {
+    return res.status(400).json({ message: "Threshold value must be a number." });
+  }
+
+  try {
+    const update = {
+      $set: {
+        thresholdEnabled: isEnabled,
+        ...(isEnabled && numericValue != null ? { thresholdValue: numericValue } : {}),
+        ...(typeof note === "string" ? { thresholdNote: note.trim() } : {}),
+        updatedAt: new Date()
+      }
+    };
+
+    // If disabled, always clear the threshold value.
+    // If enabled but value is missing/empty, also clear it (user hasn't set it yet).
+    if (!isEnabled || (isEnabled && numericValue == null)) {
+      update.$unset = { thresholdValue: "" };
+    }
+
+    const result = await db.collection("criteria").updateOne(
+      { _id: new ObjectId(id) },
+      update
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Criterion not found." });
+    }
+
+    res.json({ message: "Threshold updated." });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update threshold." });
   }
 });
 

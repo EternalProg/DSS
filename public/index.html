@@ -20,150 +20,493 @@
           <p class="hero__eyebrow">СППР (Система підтримки прийняття рішень)</p>
           <h1>Вибір платформи для дистанційного навчання</h1>
           <p class="hero__lead">
-            Система підтримки прийняття рішень для вибору оптимальної платформи
-            дистанційного навчання університету.
+            Односторінковий інтерфейс для демонстрації повного циклу: збір експертних
+            даних, формування моделі, правила та аналіз результатів.
           </p>
         </div>
         <div class="hero__card">
-          <h2>Аналітичний модуль</h2>
+          <h2>Навігація</h2>
           <p>
-            Три стратегії обчислення: обережна, адитивна та мультиплікативна.
-            Візуалізація результатів та рекомендації.
+            4 екрани: Експертиза, Модель і Дані, Правила, Результати.
           </p>
-          <a href="#analytics" class="hero__cta">
-            <span class="hero__cta-text">Перейти до аналізу</span>
-            <span class="hero__cta-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M7 17L17 7M17 7H7M17 7V17"/>
-              </svg>
-            </span>
-          </a>
+          <div class="hero__nav">
+            <a href="#screen-expertise" class="hero__cta hero__cta--secondary">
+              <span class="hero__cta-text">Екран 1</span>
+            </a>
+            <a href="#screen-model" class="hero__cta hero__cta--secondary">
+              <span class="hero__cta-text">Екран 2</span>
+            </a>
+            <a href="#screen-rules" class="hero__cta hero__cta--secondary">
+              <span class="hero__cta-text">Екран 3</span>
+            </a>
+            <a href="#screen-results" class="hero__cta">
+              <span class="hero__cta-text">Екран 4</span>
+              <span class="hero__cta-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                </svg>
+              </span>
+            </a>
+          </div>
         </div>
       </header>
 
       <main>
-        <section class="panel" id="alternatives">
+        <section class="panel" id="screen-expertise">
           <div class="panel__header">
             <div>
-              <h2>Альтернативи</h2>
-              <p>Платформи дистанційного навчання для порівняння.</p>
+              <h2>Екран 1. Експертиза</h2>
+              <p>
+                Імпорт CSV (Google Forms export) з оцінками/ранжуванням. Після імпорту
+                експерти створюються автоматично (k=1 за замовчуванням).
+              </p>
             </div>
           </div>
-          <form class="panel__form" id="alternativeForm">
-            <input type="hidden" name="id" />
-            <label>
-              Назва
-              <input type="text" name="name" placeholder="Наприклад, Moodle" required />
-            </label>
-            <label>
-              Опис
-              <input
-                type="text"
-                name="description"
-                placeholder="Коротка характеристика"
-              />
-            </label>
-            <div class="form__actions">
-              <button type="submit">Зберегти</button>
-              <button type="button" class="ghost" data-action="reset">
-                Очистити
-              </button>
-            </div>
-          </form>
-          <div class="table" id="alternativesTable"></div>
-        </section>
 
-        <section class="panel" id="criteria">
+           <div class="panel__subgrid panel__subgrid--single">
+              <div class="subpanel">
+               <div class="subpanel__header">
+                 <h3>Імпорт CSV (оцінки експертів)</h3>
+                 <p class="muted">Цей імпорт заповнює експертів + числові оцінки (1–10) + ранжування альтернатив (1–4). Дані використовуються для узгодження E7/E1 та інших розрахунків.</p>
+               </div>
+               <form class="panel__form" id="csvImportForm">
+                <label>
+                  CSV файл
+                  <input type="file" name="file" accept=".csv,text/csv" required />
+                </label>
+                <div class="form__actions">
+                  <button type="submit" id="csvImportBtn">Імпортувати</button>
+                  <button type="button" class="ghost" id="csvImportHelpBtn">
+                    Як підготувати CSV
+                  </button>
+                </div>
+              </form>
+              <div class="callout" id="csvImportStatus" style="display: none;"></div>
+             </div>
+
+              <div class="subpanel">
+                <div class="subpanel__header">
+                  <h3>Голосування за ваги критеріїв</h3>
+                  <p class="muted">Окремий CSV (не з Google Forms): експерт + значення для C1..Cn (ранги або оцінки). Після імпорту система оновить ваги критеріїв.</p>
+                </div>
+                <form class="panel__form" id="votingImportForm">
+                 <label>
+                   CSV файл (ранги критеріїв)
+                   <input type="file" name="file" accept=".csv,text/csv" required />
+                 </label>
+
+                 <div class="strategy-selection" style="margin-bottom: 6px;">
+                   <h3 style="margin-bottom: 10px;">Метод голосування</h3>
+                   <div class="method-cards">
+                     <label class="method-card method-card--recommended">
+                       <input type="radio" name="voteMethod" value="plurality" checked />
+                       <span class="method-card__text">
+                         <span class="method-card__top">
+                           <strong>Відносна більшість</strong>
+                           <span class="method-card__badge">M1</span>
+                         </span>
+                         <small>Рахує тільки 1-ші місця</small>
+                       </span>
+                       <span class="tooltip">
+                         <span class="tooltip__icon">?</span>
+                         <span class="tooltip__content">Правило відносної більшості: перемагають критерії, які найчастіше ставлять на 1-ше місце. Інші місця не враховуються. Простий метод, але може ігнорувати широку підтримку.</span>
+                       </span>
+                     </label>
+                     <label class="method-card">
+                       <input type="radio" name="voteMethod" value="borda" />
+                       <span class="method-card__text">
+                         <span class="method-card__top">
+                           <strong>Борда</strong>
+                           <span class="method-card__badge">M2</span>
+                         </span>
+                         <small>Очки за всі позиції</small>
+                       </span>
+                       <span class="tooltip">
+                         <span class="tooltip__icon">?</span>
+                         <span class="tooltip__content">Правило Борда: кожен критерій отримує очки залежно від місця (чим вище, тим більше). Для m критеріїв: rank=1 дає m-1 очок, rank=m дає 0. Сума очок формує підсумкову важливість.</span>
+                       </span>
+                     </label>
+                     <label class="method-card">
+                       <input type="radio" name="voteMethod" value="copeland" />
+                       <span class="method-card__text">
+                         <span class="method-card__top">
+                           <strong>Копленд</strong>
+                           <span class="method-card__badge">M3</span>
+                         </span>
+                         <small>Попарні “дуелі”</small>
+                       </span>
+                       <span class="tooltip">
+                         <span class="tooltip__icon">?</span>
+                         <span class="tooltip__content">Правило Копленда: критерії порівнюються попарно. Критерій отримує +1 за кожну попарну перемогу та -1 за поразку (за думкою більшості експертів). Перемагає той, хто має найбільше перемог.</span>
+                       </span>
+                     </label>
+                     <label class="method-card">
+                       <input type="radio" name="voteMethod" value="simpson" />
+                       <span class="method-card__text">
+                         <span class="method-card__top">
+                           <strong>Сімпсон</strong>
+                           <span class="method-card__badge">M4</span>
+                         </span>
+                         <small>Найкращий “найгірший” випадок</small>
+                       </span>
+                       <span class="tooltip">
+                         <span class="tooltip__icon">?</span>
+                         <span class="tooltip__content">Правило Сімпсона: для кожного критерію береться найгірший результат у попарних дуелях (мінімум підтримки проти інших). Перемагає критерій з максимальним таким мінімумом.</span>
+                       </span>
+                     </label>
+                   </div>
+                 </div>
+
+               <div class="form__actions">
+                 <button type="submit" id="votingImportBtn">Імпортувати та обчислити ваги</button>
+                 <button type="button" class="ghost" id="votingImportHelpBtn">Формат CSV</button>
+               </div>
+             </form>
+              <div class="callout" id="votingImportStatus" style="display:none;"></div>
+              <div class="table" id="votingResults" style="margin-top:12px;"></div>
+            </div>
+
+            <div class="subpanel">
+              <div class="subpanel__header">
+                <h3>Тріадні оцінки (E2)</h3>
+                <p class="muted">Окремий CSV для E2: один рядок = одна тріада (expert + alternative + criterion + optimistic/realistic/pessimistic). Без цього E2 не рахується.</p>
+              </div>
+              <form class="panel__form" id="triadsImportForm">
+                <label>
+                  CSV файл (тріади)
+                  <input type="file" name="file" accept=".csv,text/csv" required />
+                </label>
+                <div class="form__actions">
+                  <button type="submit" id="triadsImportBtn">Імпортувати тріади (E2)</button>
+                  <button type="button" class="ghost" id="triadsImportHelpBtn">Формат CSV</button>
+                </div>
+              </form>
+              <div class="callout" id="triadsImportStatus" style="display:none;"></div>
+            </div>
+
+              <div class="subpanel">
+                <div class="subpanel__header">
+                  <h3>Узгодження експертних оцінок</h3>
+                  <p class="muted">Тут CSV не імпортується: методи беруть дані з попередніх імпортів. Якщо увімкнути "Оновити таблицю ОЦІНОК", узгоджені значення буде записано в матрицю.</p>
+                </div>
+               <form class="panel__form" id="consensusForm">
+                <div class="strategy-selection" style="margin-bottom: 6px;">
+                  <h3 style="margin-bottom: 10px;">Методи узгодження</h3>
+                  <div class="method-cards" id="consensusMethodCheckboxes">
+                    <label class="method-card method-card--recommended">
+                      <input type="radio" name="consensusMethod" value="E7" checked />
+                      <span class="method-card__text">
+                        <span class="method-card__top">
+                          <strong>Алгебраїчний</strong>
+                          <span class="method-card__badge">Е7</span>
+                        </span>
+                        <small>Компроміс між числовими оцінками (α за компетентністю)</small>
+                      </span>
+                      <span class="tooltip">
+                        <span class="tooltip__icon">?</span>
+                        <span class="tooltip__content">E7 (алгебраїчний, експертиза 7): агрегує числові оцінки експертів у єдину оцінку. Враховує компетентність через ваги αᵢ=Kᵢ/ΣK. Утилітарний варіант підбирає компроміс a, що мінімізує Σ(αᵢ·|a−aᵢ|) (по суті зважена медіана). Егалітарний варіант мінімізує max(αᵢ·|a−aᵢ|) (мінімально можливе t, для якого інтервали перетинаються). Параметр: variant=utilitarian|egalitarian.</span>
+                      </span>
+                    </label>
+                    <label class="method-card">
+                      <input type="radio" name="consensusMethod" value="E1" />
+                      <span class="method-card__text">
+                        <span class="method-card__top">
+                          <strong>Статистичний</strong>
+                          <span class="method-card__badge">Е1</span>
+                        </span>
+                        <small>Середньозважене a=Σ(αᵢ·aᵢ) і узгодженість через σ²</small>
+                      </span>
+                      <span class="tooltip">
+                        <span class="tooltip__icon">?</span>
+                        <span class="tooltip__content">E1 (статистичний, експертиза 1): експерти ізольовані, зворотний зв'язок відсутній. Узгоджена числова оцінка для кожної комірки матриці обчислюється як середньозважене: a = Σ(αᵢ·aᵢ), де αᵢ — вага компетентності (нормована), aᵢ — оцінка i-го експерта. Ступінь узгодженості оцінюється дисперсією: σ² = Σ(αᵢ·(a − aᵢ)²): чим менше σ², тим ближчі думки експертів.</span>
+                      </span>
+                    </label>
+                    <label class="method-card">
+                      <input type="radio" name="consensusMethod" value="E2" />
+                      <span class="method-card__text">
+                        <span class="method-card__top">
+                          <strong>Статистичний</strong>
+                          <span class="method-card__badge">Е2</span>
+                        </span>
+                        <small>Тріади (опт/реал/пес) + σ², опційно інтервал довіри</small>
+                      </span>
+                      <span class="tooltip">
+                        <span class="tooltip__icon">?</span>
+                        <span class="tooltip__content">E2 (статистичний, експертиза 2): кожен експерт задає три значення (optimistic ≤ realistic ≤ pessimistic). З них обчислюється оцінка aᵢ та внутрішня невизначеність σᵢ² (залежить від розмаху). Далі формується узгоджена оцінка як зважена сума (αᵢ·aᵢ) і загальна дисперсія σ² з урахуванням розбіжностей між експертами. Додатковий параметр: p (ймовірність похибки) — для інтервалу довіри (якщо є табличне t для df≤20).</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <label id="consensusVariantField">
+                  Варіант (E7)
+                  <select name="variant">
+                    <option value="utilitarian">утилітарний</option>
+                    <option value="egalitarian">егалітарний</option>
+                  </select>
+                </label>
+                <label id="consensusPField" style="display:none;">
+                  p (E2, опційно)
+                  <select name="p">
+                    <option value="">(не задано)</option>
+                    <option value="0.1">0.10</option>
+                    <option value="0.05">0.05</option>
+                    <option value="0.01">0.01</option>
+                  </select>
+                </label>
+
+                <label id="consensusApplyField" style="display:none;">
+                  Оновити таблицю ОЦІНОК
+                  <div class="strategy-checkboxes" style="gap: 10px;">
+                    <label class="checkbox-label" style="padding: 10px 14px;">
+                      <input type="checkbox" name="applyToEvaluations" value="yes" checked />
+                      <span class="checkbox-text">
+                        <strong>Застосувати результат</strong>
+                        <small>Записати узгоджені значення у матрицю оцінок</small>
+                      </span>
+                      <span class="tooltip">
+                        <span class="tooltip__icon">?</span>
+                        <span class="tooltip__content">Якщо увімкнено, узгоджені значення (для методів, що дають матрицю) будуть записані у таблицю ОЦІНОК і використані в подальших обчисленнях (стратегіях). Після застосування матриця на Екрані 2 оновиться.</span>
+                      </span>
+                    </label>
+                  </div>
+                </label>
+
+                <div class="form__actions">
+                  <button type="submit" id="consensusCalcBtn">Обчислити</button>
+                </div>
+              </form>
+              <div class="callout" id="consensusStatus" style="display:none;"></div>
+              <div class="table" id="consensusResults"></div>
+            </div>
+
+             <div class="subpanel">
+               <div class="subpanel__header">
+                 <h3>Ручне введення (опціонально)</h3>
+                <p class="muted">
+                  Якщо CSV недоступний, можна заповнити базові дані моделі на екрані 2.
+                </p>
+              </div>
+              <div class="callout callout--info">
+                Порада: спочатку створіть альтернативи та критерії, потім імпортуйте CSV.
+              </div>
+            </div>
+           </div>
+         </section>
+
+        <section class="panel" id="screen-model">
           <div class="panel__header">
             <div>
-              <h2>Критерії</h2>
-              <p>Фактори, за якими оцінюються альтернативи.</p>
+              <h2>Екран 2. Модель та Дані</h2>
+              <p>Альтернативи, критерії, матриця оцінок та ваги критеріїв.</p>
             </div>
           </div>
-          <form class="panel__form" id="criterionForm">
-            <input type="hidden" name="id" />
-            <label>
-              Назва
-              <input
-                type="text"
-                name="name"
-                placeholder="Наприклад, Вартість використання"
-                required
-              />
-            </label>
-            <label>
-              Тип критерію
-              <select name="type" required>
-                <option value="maximize">maximize</option>
-                <option value="minimize">minimize</option>
-              </select>
-            </label>
-            <label>
-              Опис
-              <input
-                type="text"
-                name="description"
-                placeholder="Що саме оцінюється"
-              />
-            </label>
-            <div class="form__actions">
-              <button type="submit">Зберегти</button>
-              <button type="button" class="ghost" data-action="reset">
-                Очистити
-              </button>
-            </div>
-          </form>
-          <div class="table" id="criteriaTable"></div>
-        </section>
 
-        <section class="panel" id="evaluations">
-          <div class="panel__header">
-            <div>
-              <h2>Оцінки</h2>
-              <p>Заповнення матриці оцінювання альтернатив. <span class="hint">Подвійний клік на комірку для редагування.</span></p>
+          <div class="panel__subgrid panel__subgrid--single">
+            <div class="subpanel" id="alternatives">
+              <div class="subpanel__header">
+                <h3>Альтернативи</h3>
+                <p class="muted">Платформи дистанційного навчання для порівняння.</p>
+              </div>
+              <form class="panel__form" id="alternativeForm">
+                <input type="hidden" name="id" />
+                <label>
+                  Назва
+                  <input type="text" name="name" placeholder="Наприклад, Moodle" required />
+                </label>
+                <label>
+                  Опис
+                  <input
+                    type="text"
+                    name="description"
+                    placeholder="Коротка характеристика"
+                  />
+                </label>
+                <div class="form__actions">
+                  <button type="submit">Зберегти</button>
+                  <button type="button" class="ghost" data-action="reset">
+                    Очистити
+                  </button>
+                </div>
+              </form>
+              <div class="table" id="alternativesTable"></div>
+            </div>
+
+            <div class="subpanel" id="criteria">
+              <div class="subpanel__header">
+                <h3>Критерії</h3>
+                <p class="muted">Фактори, за якими оцінюються альтернативи.</p>
+              </div>
+              <form class="panel__form" id="criterionForm">
+                <input type="hidden" name="id" />
+                <label>
+                  Назва
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Наприклад, Вартість використання"
+                    required
+                  />
+                </label>
+                <label>
+                  Тип критерію
+                  <select name="type" required>
+                    <option value="maximize">maximize</option>
+                    <option value="minimize">minimize</option>
+                  </select>
+                </label>
+                <label>
+                  Опис
+                  <input
+                    type="text"
+                    name="description"
+                    placeholder="Що саме оцінюється"
+                  />
+                </label>
+                <div class="form__actions">
+                  <button type="submit">Зберегти</button>
+                  <button type="button" class="ghost" data-action="reset">
+                    Очистити
+                  </button>
+                </div>
+              </form>
+              <div class="table" id="criteriaTable"></div>
             </div>
           </div>
-          <form class="panel__form" id="evaluationForm">
-            <label>
-              Альтернатива
-              <select name="alternativeId" required></select>
-            </label>
-            <label>
-              Критерій
-              <select name="criterionId" required></select>
-            </label>
-            <label>
-              Значення
-              <input
-                type="number"
-                name="value"
-                step="0.01"
-                placeholder="0"
-                required
-              />
-            </label>
-            <div class="form__actions">
-              <button type="submit">Зберегти</button>
-            </div>
-          </form>
-          <div class="table" id="matrixTable"></div>
-        </section>
 
-        <section class="panel" id="weights">
-          <div class="panel__header">
-            <div>
-              <h2>Ваги критеріїв</h2>
-              <p>Встановіть важливість кожного критерію (1-10).</p>
+          <div class="panel__subgrid panel__subgrid--single">
+            <div class="subpanel" id="evaluations">
+              <div class="subpanel__header">
+                <h3>Матриця оцінок</h3>
+                <p class="muted">
+                  Заповнення матриці оцінювання альтернатив.
+                  <span class="hint">Подвійний клік на комірку для редагування.</span>
+                </p>
+              </div>
+              <form class="panel__form" id="evaluationForm">
+                <label>
+                  Альтернатива
+                  <select name="alternativeId" required></select>
+                </label>
+                <label>
+                  Критерій
+                  <select name="criterionId" required></select>
+                </label>
+                <label>
+                  Значення
+                  <input
+                    type="number"
+                    name="value"
+                    step="0.01"
+                    placeholder="0"
+                    required
+                  />
+                </label>
+                <div class="form__actions">
+                  <button type="submit">Зберегти</button>
+                </div>
+              </form>
+              <div class="table" id="matrixTable"></div>
+            </div>
+
+            <div class="subpanel" id="weights">
+              <div class="subpanel__header">
+                <h3>Ваги критеріїв</h3>
+                <p class="muted">Встановіть важливість кожного критерію (1-10).</p>
+              </div>
+              <div class="weights-grid" id="weightsGrid"></div>
             </div>
           </div>
-          <div class="weights-grid" id="weightsGrid"></div>
         </section>
 
-        <section class="panel panel--wide" id="analytics">
+        <section class="panel" id="screen-rules">
           <div class="panel__header">
             <div>
-              <h2>Аналіз та рекомендації</h2>
-              <p>Виберіть стратегії обчислення та отримайте рекомендацію.</p>
+              <h2>Екран 3. Експертна логіка (Правила)</h2>
+              <p>
+                Пороги/обмеження та IF-THEN правила.
+              </p>
+            </div>
+          </div>
+
+          <div class="panel__subgrid panel__subgrid--single">
+            <div class="subpanel">
+              <div class="subpanel__header">
+                <h3>Пороги</h3>
+                <p class="muted">Напр., мінімальний рівень безпеки або максимальна вартість.</p>
+              </div>
+              <div class="callout callout--info" style="margin-bottom:12px;">
+                Для <strong>maximize</strong> поріг означає <strong>x ≥ поріг</strong>, для <strong>minimize</strong> — <strong>x ≤ поріг</strong>.
+              </div>
+              <div class="weights-grid" id="thresholdsGrid"></div>
+            </div>
+            <div class="subpanel">
+              <div class="subpanel__header">
+                <h3>IF-THEN правила</h3>
+                <p class="muted">Логіка рекомендацій, пояснення та фільтрація альтернатив.</p>
+              </div>
+              <form class="panel__form" id="ruleForm">
+                <input type="hidden" name="id" />
+                <label>
+                  Умова: критерій
+                  <select name="criterionId" required></select>
+                </label>
+                <label>
+                  Оператор
+                  <select name="operator" required>
+                    <option value=">">&gt;</option>
+                    <option value=">=">&gt;=</option>
+                    <option value="<">&lt;</option>
+                    <option value="<=">&lt;=</option>
+                    <option value="==">==</option>
+                    <option value="!=">!=</option>
+                  </select>
+                </label>
+                <label>
+                  Значення
+                  <input type="number" name="value" step="0.01" required />
+                </label>
+                <label>
+                  Дія (THEN)
+                  <select name="action" required>
+                    <option value="exclude">Виключити альтернативу</option>
+                    <option value="adjust_percent">Змінити оцінку (%)</option>
+                  </select>
+                </label>
+                <label id="rulePercentField">
+                  Відсоток (наприклад, -20)
+                  <input type="number" name="percent" step="1" placeholder="-20" />
+                </label>
+                <label id="ruleTargetCriterionField">
+                  До якого критерію застосувати
+                  <select name="targetCriterionId"></select>
+                </label>
+                <label>
+                  Пояснення (опційно)
+                  <input type="text" name="note" placeholder="Коротке пояснення" />
+                </label>
+                <label class="checkbox-label" style="padding:10px 14px;">
+                  <input type="checkbox" name="enabled" checked />
+                  <span class="checkbox-text">
+                    <strong>Увімкнено</strong>
+                    <small>Правило застосовується при розрахунку</small>
+                  </span>
+                </label>
+                <div class="form__actions">
+                  <button type="submit">Зберегти правило</button>
+                  <button type="button" class="ghost" data-action="reset">Очистити</button>
+                </div>
+              </form>
+              <div class="table" id="rulesTable"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--wide" id="screen-results">
+          <div class="panel__header">
+            <div>
+              <h2>Екран 4. Результати та Аналіз</h2>
+              <p>Виберіть стратегії обчислення та отримайте рейтинг і пояснення.</p>
             </div>
           </div>
 
@@ -175,11 +518,11 @@
                   <input type="checkbox" name="strategy" value="cautious" checked />
                   <span class="checkbox-text">
                     <strong>Обережна</strong>
-                    <small>Q(Aᵢ) = min(wⱼ × xᵢⱼ)</small>
+                    <small>Q(Aᵢ) = min(sⱼ × wⱼ × xᵢⱼ)</small>
                   </span>
                   <span class="tooltip">
                     <span class="tooltip__icon">?</span>
-                    <span class="tooltip__content">Оцінка за найгіршим критерієм. Підходить для критичних систем, де неприпустимі слабкі місця.</span>
+                    <span class="tooltip__content">Мінімум зі зважених оцінок. У сирому режимі: для maximize s=+1, для minimize s=-1. У нормалізованому режимі minimize спочатку інвертується в 0..1, тому знак не застосовується.</span>
                   </span>
                 </label>
                 <label class="checkbox-label checkbox-label--recommended">
@@ -187,22 +530,50 @@
                   <span class="checkbox-text">
                     <strong>Адитивна</strong>
                     <span class="recommended-badge">Рекомендована</span>
-                    <small>Q(Aᵢ) = Σ(wⱼ × xᵢⱼ)</small>
+                    <small>Q(Aᵢ) = Σ(sⱼ × wⱼ × xᵢⱼ)</small>
                   </span>
                   <span class="tooltip">
                     <span class="tooltip__icon">?</span>
-                    <span class="tooltip__content">Адитивна стратегія є найпоширенішою і дозволяє критеріям компенсувати один одного.</span>
+                    <span class="tooltip__content">Сума внесків. У сирому режимі: критерії maximize додаються, minimize віднімаються. У нормалізованому режимі minimize інвертується в 0..1, ваги нормалізуються (Σw=1), результат у межах 0..1.</span>
                   </span>
                 </label>
                 <label class="checkbox-label">
                   <input type="checkbox" name="strategy" value="multiplicative" checked />
                   <span class="checkbox-text">
                     <strong>Мультиплікативна</strong>
-                    <small>Q(Aᵢ) = Π(xᵢⱼ^wⱼ)</small>
+                    <small>Q(Aᵢ) = Π(xᵢⱼ^(sⱼ × wⱼ))</small>
                   </span>
                   <span class="tooltip">
                     <span class="tooltip__icon">?</span>
-                    <span class="tooltip__content">Добуток оцінок у степені ваг. Низькі оцінки сильніше впливають на результат.</span>
+                    <span class="tooltip__content">Добуток оцінок. У сирому режимі: для minimize використовується від'ємний степінь. У нормалізованому режимі minimize інвертується в 0..1, ваги нормалізуються (Σw=1), експоненти додатні, результат у межах 0..1.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="strategy-selection">
+              <h3>Шкала оцінювання</h3>
+              <div class="strategy-checkboxes" id="scaleMode">
+                <label class="checkbox-label checkbox-label--recommended">
+                  <input type="radio" name="scaleMode" value="raw" checked />
+                  <span class="checkbox-text">
+                    <strong>Сирі значення</strong>
+                    <small>Використовувати оцінки як є (1–10, тощо)</small>
+                  </span>
+                  <span class="tooltip">
+                    <span class="tooltip__icon">?</span>
+                    <span class="tooltip__content">Сирий режим: у розрахунку використовуються значення матриці оцінок без перетворень. Підходить, коли всі критерії в однаковій шкалі.</span>
+                  </span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="radio" name="scaleMode" value="normalized" />
+                  <span class="checkbox-text">
+                    <strong>Нормалізовані (0..1)</strong>
+                    <small>Мін–макс нормалізація по кожному критерію</small>
+                  </span>
+                  <span class="tooltip">
+                    <span class="tooltip__icon">?</span>
+                    <span class="tooltip__content">Нормалізований режим: для кожного критерію значення перетворюються в діапазон 0..1. Для maximize: (x-min)/(max-min). Для minimize: (max-x)/(max-min). Додатково застосовується невеликий зсув (ε), щоб уникати точних 0/1 (це стабілізує обережну та мультиплікативну стратегії і покращує читабельність графіків).</span>
                   </span>
                 </label>
               </div>
@@ -212,16 +583,18 @@
             </button>
           </div>
 
-          <div class="analytics-results" id="analyticsResults" style="display: none;">
-            <div class="recommendation-card" id="recommendationCard">
-              <h3>Рекомендація</h3>
-              <div id="recommendationContent"></div>
-            </div>
+           <div class="analytics-results" id="analyticsResults" style="display: none;">
+             <div class="recommendation-card" id="recommendationCard">
+               <h3>Рекомендація</h3>
+               <div id="recommendationContent"></div>
+             </div>
 
-            <div class="results-section">
-              <h3>Таблиця результатів</h3>
-              <div class="table" id="resultsTable"></div>
-            </div>
+             <div class="callout callout--info" id="logicStatus" style="display:none; margin-bottom:16px;"></div>
+
+             <div class="results-section">
+               <h3>Таблиця результатів</h3>
+               <div class="table" id="resultsTable"></div>
+             </div>
 
             <div class="charts-section">
               <h3>Візуалізація</h3>

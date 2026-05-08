@@ -6,6 +6,12 @@ const criteriaRouter = require("./routes/criteria");
 const evaluationsRouter = require("./routes/evaluations");
 const matrixRouter = require("./routes/matrix");
 const analyticsRouter = require("./routes/analytics");
+const importRouter = require("./routes/import");
+const consensusRouter = require("./routes/consensus");
+const expertsRouter = require("./routes/experts");
+const triadsRouter = require("./routes/triads");
+const rulesRouter = require("./routes/rules");
+const votingRouter = require("./routes/voting");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +28,12 @@ app.use("/api/criteria", criteriaRouter);
 app.use("/api/evaluations", evaluationsRouter);
 app.use("/api/matrix", matrixRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/import", importRouter);
+app.use("/api/consensus", consensusRouter);
+app.use("/api/experts", expertsRouter);
+app.use("/api/triads", triadsRouter);
+app.use("/api/rules", rulesRouter);
+app.use("/api/voting", votingRouter);
 
 connectToDb()
   .then(() => {
