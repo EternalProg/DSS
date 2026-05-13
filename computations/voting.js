@@ -1,3 +1,16 @@
+/**
+ * Голосування — методи визначення ваг критеріїв на основі експертних ранжувань.
+ *
+ * Експерти ранжують критерії: rank = 1 означає "найважливіший".
+ * З цих ранжувань обчислюються бали, які потім конвертуються у ваги [1..10].
+ *
+ * Методи (стор. 94 підручника):
+ *   - Plurality (M1): тільки перші місця
+ *   - Borda (M2):      всі позиції, pts = m − rank
+ *   - Copeland (M3):   попарний "турнір" (перемога/поразка)
+ *   - Simpson (M4):    максимінна попарна підтримка
+ */
+
 function clampNumber(value, { min = -Infinity, max = Infinity } = {}) {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
@@ -5,6 +18,7 @@ function clampNumber(value, { min = -Infinity, max = Infinity } = {}) {
   return n;
 }
 
+// Ваги компетентності експертів: αᵢ = Kᵢ / ΣK (або αᵢ = 1/n для режиму "equal")
 function computeAlphaWeights(experts, { mode = "competence" } = {}) {
   const weights = new Map();
   if (!Array.isArray(experts) || experts.length === 0) return weights;
@@ -32,6 +46,11 @@ function computeAlphaWeights(experts, { mode = "competence" } = {}) {
   return weights;
 }
 
+/**
+ * PLURALITY (M1) — Відносна більшість.
+ * Враховуються ТІЛЬКИ перші місця (rank === 1).
+ * score(cⱼ) = Σ αᵢ для всіх експертів, що поставили cⱼ на 1 місце.
+ */
 function plurality({ ballots, alphaByExpertId, criterionIds }) {
   const scores = new Map(criterionIds.map((id) => [String(id), 0]));
   for (const b of ballots) {
@@ -44,6 +63,12 @@ function plurality({ ballots, alphaByExpertId, criterionIds }) {
   return scores;
 }
 
+/**
+ * BORDA (M2) — Метод Борда.
+ * Для m критеріїв: pts = m − rank (найкращий = m−1 балів).
+ * score(cⱼ) = Σ αᵢ · (m − rankᵢⱼ)
+ * Враховує всі позиції в ранжуванні.
+ */
 function borda({ ballots, alphaByExpertId, criterionIds }) {
   const m = criterionIds.length;
   const scores = new Map(criterionIds.map((id) => [String(id), 0]));
@@ -58,6 +83,10 @@ function borda({ ballots, alphaByExpertId, criterionIds }) {
   return scores;
 }
 
+/**
+ * Попарна матриця P[a|b] — допоміжна для Copeland та Simpson.
+ * P[a|b] = сума компетентностей експертів, які поставили a ВИЩЕ (rank(a) < rank(b)) за b.
+ */
 function pairwiseMatrix({ ballots, alphaByExpertId, criterionIds }) {
   const ids = criterionIds.map((x) => String(x));
   const P = new Map();
@@ -87,6 +116,15 @@ function pairwiseMatrix({ ballots, alphaByExpertId, criterionIds }) {
   return { ids, P };
 }
 
+/**
+ * COPELAND (M3) — Метод Копленда.
+ *
+ * Для кожної пари (a, b):
+ *   якщо P[a|b] > P[b|a] → a перемагає (+1), b програє (−1)
+ *   якщо P[b|a] > P[a|b] → b перемагає (+1), a програє (−1)
+ *
+ * score(a) = (#перемог) − (#поразок)
+ */
 function copeland({ ballots, alphaByExpertId, criterionIds }) {
   const { ids, P } = pairwiseMatrix({ ballots, alphaByExpertId, criterionIds });
   const score = new Map(ids.map((id) => [id, 0]));
@@ -108,6 +146,14 @@ function copeland({ ballots, alphaByExpertId, criterionIds }) {
   return score;
 }
 
+/**
+ * SIMPSON (M4) — Метод Сімпсона (максимін).
+ *
+ * Для кожного критерію a:
+ *   score(a) = min_{b ≠ a} P[a|b]
+ *
+ * Тобто беремо НАЙГІРШУ (мінімальну) попарну підтримку для кожного критерію.
+ */
 function simpson({ ballots, alphaByExpertId, criterionIds }) {
   const { ids, P } = pairwiseMatrix({ ballots, alphaByExpertId, criterionIds });
   const score = new Map();
@@ -123,6 +169,13 @@ function simpson({ ballots, alphaByExpertId, criterionIds }) {
   return score;
 }
 
+/**
+ * Перетворення балів голосування у ваги [1..10] через min-max нормалізацію.
+ *
+ * t     = (score − minScore) / (maxScore − minScore)     — нормалізація в [0,1]
+ * w     = 1 + t · 9                                        — масштабування в [1, 10]
+ * w     = Math.round(clamp(w, 1, 10))                     — округлення до цілого
+ */
 function scoresToWeights(scoresMap, { min = 1, max = 10 } = {}) {
   const entries = Array.from(scoresMap.entries());
   let sMin = Infinity;
@@ -150,6 +203,15 @@ function scoresToWeights(scoresMap, { min = 1, max = 10 } = {}) {
   return weights;
 }
 
+/**
+ * Вхідна точка — обчислення ваг критеріїв через голосування.
+ *
+ * @param {string}  method   — "plurality" | "borda" | "copeland" | "simpson"
+ * @param {Array}   ballots  — [{ expertId, ranks: Map<criterionId, rank> }]
+ * @param {Array}   experts  — [{ _id, competenceK }]
+ * @param {string[]} criterionIds
+ * @returns {{ ok, scores, weights, ranked }}
+ */
 function calculateVotingWeights({ method, ballots, experts, criterionIds }) {
   const alphaByExpertId = computeAlphaWeights(experts, { mode: "competence" });
   const m = String(method || "").trim().toLowerCase();

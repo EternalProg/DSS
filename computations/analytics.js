@@ -1,15 +1,18 @@
 /**
- * Analytics Service - Decision Support System
- * Implements three aggregation strategies:
- * - Cautious (pessimistic): Q(Ai) = min(sj * wj * xij)
- * - Additive: Q(Ai) = sum(sj * wj * xij)
- * - Multiplicative: Q(Ai) = product(xij ^ (sj * wj))
- * where sj = +1 for maximize, sj = -1 for minimize.
+ * Analytics — методи згортки (агрегації) для обчислення інтегральної оцінки альтернатив
+ *
+ * Три стратегії:
+ *   - Обережна (Cautious):     Q(Aᵢ) = min(sⱼ · wⱼ · xᵢⱼ)     — оцінка за найгіршим критерієм
+ *   - Адитивна (Additive):     Q(Aᵢ) = Σ(sⱼ · wⱼ · xᵢⱼ)      — зважена сума
+ *   - Мультиплікативна:        Q(Aᵢ) = Π(xᵢⱼ ^ (sⱼ · wⱼ))   — добуток з експонентою
+ *
+ * де sⱼ = +1 для maximize (чим більше — тим краще),
+ *     sⱼ = −1 для minimize (чим менше — тим краще).
  */
 
 const allowedCriterionTypes = new Set(["maximize", "minimize"]);
 
-// Bump when analytics math changes (helps detect stale server reloads).
+// Збільшувати щоразу, коли змінюється математика аналітики (допомагає виявити застарілі reload сервера).
 const ANALYTICS_IMPL_VERSION = 3;
 
 function getPairKey(alternativeId, criterionId) {
@@ -29,6 +32,7 @@ function buildEvaluationMap(evaluations) {
   return evaluationMap;
 }
 
+// sign: для maximize → +1 (внесок додатній), для minimize → −1 (внесок від'ємний)
 function getCriterionSign(criterionType) {
   return criterionType === "minimize" ? -1 : 1;
 }
@@ -41,7 +45,7 @@ function clamp01(x) {
 }
 
 function clampUnit(x, { eps = 1e-6 } = {}) {
-  // For multiplicative we need strictly positive values.
+  // Для мультиплікативної стратегії значення має бути СУВОРО > 0 (інакше Math.pow не працює коректно).
   const n = Number(x);
   if (!Number.isFinite(n)) return eps;
   if (n <= eps) return eps;
@@ -49,9 +53,8 @@ function clampUnit(x, { eps = 1e-6 } = {}) {
   return n;
 }
 
+// Визначає, чи вже значення нормалізовані (в діапазоні [0,1]), чи "сирі".
 function getScaleModeFromEvaluations(evaluations) {
-  // normalizeEvaluations() produces values clamped to (0..1].
-  // We keep this detection internal to avoid threading extra params through all callers.
   let min = Infinity;
   let max = -Infinity;
   let seen = 0;
@@ -61,15 +64,16 @@ function getScaleModeFromEvaluations(evaluations) {
     seen += 1;
     if (v < min) min = v;
     if (v > max) max = v;
-    if (seen >= 50) break; // quick heuristic
+    if (seen >= 50) break;
   }
   if (!seen) return "raw";
   if (min >= 0 && max <= 1) return "normalized";
   return "raw";
 }
 
+// Нормалізація ваг: у raw-режимі — ваги як є (1..10);
+// у normalized — wⱼ_norm = wⱼ / Σw (сума ваг = 1).
 function buildWeights({ criteria, scaleMode }) {
-  // In normalized mode we normalize weights so final Q(Ai) stays within 0..1.
   const weights = new Map(); // criterionId -> w
   if (scaleMode !== "normalized") {
     for (const c of criteria) weights.set(String(c._id), Number(c.weight));
@@ -90,6 +94,7 @@ function buildWeights({ criteria, scaleMode }) {
   return weights;
 }
 
+// Порівняння числа з оператором (>, >=, <, <=, ==, !=) — для умов правил.
 function compareNumber(left, operator, right) {
   if (!Number.isFinite(left) || !Number.isFinite(right)) return false;
   switch (operator) {
@@ -110,16 +115,23 @@ function compareNumber(left, operator, right) {
   }
 }
 
+/**
+ * Застосування IF-THEN правил та порогових значень до альтернатив.
+ *
+ * Правило: IF (оцінка_критерію OPERATOR значення) THEN дія
+ *   - exclude: виключити альтернативу з розгляду
+ *   - adjust_percent: new = old · (1 + pct/100)
+ *
+ * Поріг: для maximize має бути x >= threshold, для minimize x <= threshold.
+ * Альтернативи, що не задовольняють поріг, виключаються.
+ */
 function applyRulesAndThresholds({ alternatives, criteria, evaluations, rules = [] }) {
-  // Rules can exclude alternatives or adjust evaluation values.
-  // Thresholds are stored on criteria: thresholdEnabled + thresholdValue.
   const evaluationMap = buildEvaluationMap(evaluations);
 
   const enabledRules = Array.isArray(rules) ? rules.filter((r) => r && r.enabled !== false) : [];
   const excludedByRule = new Map(); // altId -> reasons[]
   const adjusted = []; // { alternativeId, criterionId, from, to, ruleId }
 
-  // Apply rule actions.
   for (const alt of alternatives) {
     const altId = alt._id;
 
@@ -138,7 +150,6 @@ function applyRulesAndThresholds({ alternatives, criteria, evaluations, rules = 
         excludedByRule
           .get(String(altId))
           .push({ ruleId: rule._id, criterionId: when.criterionId, operator: op, value: right });
-        // Keep applying other rules for diagnostics, but exclusion is final.
         continue;
       }
 
@@ -167,7 +178,7 @@ function applyRulesAndThresholds({ alternatives, criteria, evaluations, rules = 
     }
   }
 
-  // Apply thresholds after rule adjustments.
+  // Пороги: перевіряємо кожну альтернативу за кожним критерієм з увімкненим порогом.
   const excludedByThreshold = new Map(); // altId -> reasons[]
   for (const alt of alternatives) {
     const altId = alt._id;
@@ -202,7 +213,6 @@ function applyRulesAndThresholds({ alternatives, criteria, evaluations, rules = 
   const filteredAlternatives = alternatives.filter((a) => !excludedAltIds.has(String(a._id)));
   const filteredEvaluations = [];
   for (const ev of evaluationMap.values()) {
-    // evaluationMap includes adjusted ev objects; keep only those for included alternatives.
     if (!excludedAltIds.has(String(ev.alternativeId))) filteredEvaluations.push(ev);
   }
 
@@ -217,6 +227,14 @@ function applyRulesAndThresholds({ alternatives, criteria, evaluations, rules = 
   };
 }
 
+/**
+ * Нормалізація оцінок у діапазон [0, 1] за критеріями.
+ *
+ * Формула:
+ *   x_raw01 = (v − minⱼ) / (maxⱼ − minⱼ)      — min-max нормалізація
+ *   x_norm  = type === "minimize" ? 1 − x_raw01 : x_raw01    — для minimize інвертуємо
+ *   x_final = x_norm · (1 − 2·ε) + ε, ε = 1e-3               — уникаємо рівно 0 та 1
+ */
 function normalizeEvaluations({ alternatives, criteria, evaluations, mode = "raw" }) {
   const m = String(mode || "raw").trim().toLowerCase();
   if (m !== "normalized") return { evaluations, meta: { scaleMode: "raw" } };
@@ -253,9 +271,9 @@ function normalizeEvaluations({ alternatives, criteria, evaluations, mode = "raw
       return { ...ev, value: 1 };
     }
     const raw01 = (v - r.min) / span;
+    // Для minimize — інвертуємо: 1 — (нормалізоване значення)
     const val01 = c?.type === "minimize" ? 1 - raw01 : raw01;
-    // Keep within 0..1, but avoid exact 0/1 which collapses cautious strategy
-    // and makes multiplicative underflow too easily.
+    // Зміщуємо від 0 та 1 на epsilon, щоб уникнути проблем з обережною (занулення) та мультиплікативною (underflow).
     const eps = 1e-3;
     const clamped = clamp01(val01);
     const safe01 = clamped * (1 - 2 * eps) + eps;
@@ -312,6 +330,7 @@ function validateAnalysisData(
         continue;
       }
 
+      // Для мультиплікативної стратегії всі значення мають бути > 0 (не можна підносити 0 до від'ємного степеня).
       if (requiresPositiveValues && value <= 0) {
         errors.push(
           `Для мультиплікативної стратегії значення має бути > 0: альтернатива "${alternative.name}", критерій "${criterion.name}".`
@@ -324,8 +343,16 @@ function validateAnalysisData(
 }
 
 /**
- * Cautious strategy - takes minimum signed weighted score
- * Q(Ai) = min(sj * wj * xij)
+ * ОБЕРЕЖНА СТРАТЕГІЯ — максимін (оцінка за найгіршим критерієм).
+ *
+ * Q(Aᵢ) = min(sⱼ · wⱼ · xᵢⱼ)
+ *
+ * Для maximize: внесок = +w·x (чим більше — тим краще).
+ * Для minimize: внесок = −w·x (чим менше — тим краще, від'ємний внесок).
+ * Беремо НАЙМЕНШИЙ (найгірший) внесок — це і є оцінка альтернативи.
+ *
+ * У normalizied-режимі: всі значення вже інвертовані (minimize→1−x), тому sⱼ=+1 для всіх,
+ * ваги нормовані на суму 1. Беремо мінімум зважених внесків.
  */
 function calculateCautious(
   alternatives,
@@ -337,7 +364,7 @@ function calculateCautious(
 
   const scaleMode = context?.scaleMode || getScaleModeFromEvaluations(evaluations);
   const wByCritId = buildWeights({ criteria, scaleMode });
-  const useWeights = scaleMode !== "normalized"; // In normalized mode use pure maximin in 0..1.
+  const useWeights = scaleMode !== "normalized";
 
   for (const alternative of alternatives) {
     let minScore = Infinity;
@@ -367,6 +394,7 @@ function calculateCautious(
         score
       });
 
+      // Шукаємо мінімум (найгірше значення) — це і є Q(Aᵢ)
       if (score < minScore) {
         minScore = score;
       }
@@ -389,8 +417,15 @@ function calculateCautious(
 }
 
 /**
- * Additive strategy - sum of signed weighted scores
- * Q(Ai) = sum(sj * wj * xij)
+ * АДИТИВНА СТРАТЕГІЯ — зважена сума (найпоширеніший метод).
+ *
+ * Q(Aᵢ) = Σ(sⱼ · wⱼ · xᵢⱼ)
+ *
+ * Для maximize: внесок додатній (+w·x) — додаємо до суми.
+ * Для minimize: внесок від'ємний (−w·x) — віднімаємо від суми.
+ *
+ * У normalizied-режимі: значення вже інвертовані, ваги нормовані (Σw=1),
+ * результат у межах [0, 1].
  */
 function calculateAdditive(
   alternatives,
@@ -444,8 +479,15 @@ function calculateAdditive(
 }
 
 /**
- * Multiplicative strategy with signed exponent
- * Q(Ai) = product(xij ^ (sj * wj))
+ * МУЛЬТИПЛІКАТИВНА СТРАТЕГІЯ — добуток з експонентою.
+ *
+ * Q(Aᵢ) = Π(xᵢⱼ ^ (sⱼ · wⱼ))
+ *
+ * Для maximize: xᵢⱼ ^ (+wⱼ) — чим більше x, тим більший внесок.
+ * Для minimize: xᵢⱼ ^ (−wⱼ) = 1 / (xᵢⱼ ^ wⱼ) — чим менше x, тим більший внесок.
+ *
+ * ВАЖЛИВО: x > 0 для всіх значень (бо 0^−w = невизначеність, 0^+w = 0 → вбиває добуток).
+ * У normalizied-режимі: значення зсунуті від 0 на epsilon (clampUnit).
  */
 function calculateMultiplicative(
   alternatives,
@@ -478,6 +520,7 @@ function calculateMultiplicative(
         : Number(evaluation.value);
       const sign = scaleMode === "normalized" ? 1 : getCriterionSign(criterion.type);
       const exponent = sign * weight;
+      // x^(s·w) — якщо s=-1, то це 1/x^w
       const partialScore = Math.pow(value, exponent);
 
       details.push({
@@ -506,7 +549,7 @@ function calculateMultiplicative(
 }
 
 /**
- * Generate explanation for the results
+ * Генерація пояснення результатів: переможець, топ-3 критерії, другий варіант, різниця.
  */
 function generateExplanation(results, strategyName, strategyId) {
   if (!results.length) {
@@ -543,7 +586,8 @@ function generateExplanation(results, strategyName, strategyId) {
 }
 
 /**
- * Main analysis function
+ * Головна функція аналізу — обчислює всі три стратегії та формує рекомендацію.
+ * Рекомендується адитивна стратегія як найпоширеніша.
  */
 function analyze(
   alternatives,

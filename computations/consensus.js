@@ -1,3 +1,12 @@
+/**
+ * Консенсус — методи узгодження експертних оцінок.
+ *
+ * Три методи (з підручника):
+ *   E1 — Статистичний:           a = Σαᵢ·aᵢ, σ² = Σαᵢ·(a−aᵢ)²
+ *   E2 — Статистичний (тріади):  aᵢ = (γ₁·opt + γ₂·real + γ₃·pess)/Σγ, σ² = внутрішня + зовнішня
+ *   E7 — Алгебраїчний:           утилітарний (зважена медіана) та егалітарний (бінарний пошук t)
+ */
+
 const { ObjectId } = require("mongodb");
 
 function toObjectId(id) {
@@ -13,10 +22,11 @@ function clampNumber(value, { min = -Infinity, max = Infinity } = {}) {
   return n;
 }
 
+/**
+ * Ваги компетентності експертів: αᵢ = Kᵢ / ΣK.
+ * Якщо сума K = 0 або mode="equal" → всі експерти рівні: αᵢ = 1/n.
+ */
 function computeAlphaWeights(experts, { mode = "competence" } = {}) {
-  // mode:
-  // - competence: alpha_i = K_i / sum(K)
-  // - equal: alpha_i = 1/n
   const weights = new Map();
   if (!Array.isArray(experts) || experts.length === 0) return weights;
 
@@ -50,9 +60,16 @@ function computeAlphaWeights(experts, { mode = "competence" } = {}) {
   return weights;
 }
 
+/**
+ * Зважена медіана — допоміжна для E7 Utilitarian.
+ *
+ * Алгоритм:
+ * 1. Сортуємо пари (value, weight) за зростанням value.
+ * 2. Накопичуємо вагу. Перше значення, де cum >= 0.5 — це медіана.
+ *
+ * Це розв'язок задачі: min Σ αᵢ·|a − aᵢ|
+ */
 function weightedMedian(pairs) {
-  // pairs: [{ value:number, weight:number }]
-  // Returns smallest value where cumulative weight >= 0.5.
   const sorted = [...pairs].sort((a, b) => a.value - b.value);
   let cum = 0;
   for (const p of sorted) {
@@ -62,6 +79,14 @@ function weightedMedian(pairs) {
   return sorted.length ? sorted[sorted.length - 1].value : null;
 }
 
+/**
+ * E7 УТИЛІТАРНИЙ — алгебраїчний метод.
+ *
+ * Критерій: мінімізуємо Σ αᵢ · |a − aᵢ|   (суму зважених абсолютних відхилень)
+ * Розв'язок: зважена медіана (weightedMedian).
+ *
+ * Властивість: стійкий до викидів (екстремальні оцінки мало впливають).
+ */
 function e7Utilitarian({ valuesByExpertId, alphaByExpertId }) {
   const pairs = [];
   for (const [expertId, value] of valuesByExpertId.entries()) {
@@ -82,9 +107,18 @@ function e7Utilitarian({ valuesByExpertId, alphaByExpertId }) {
   return { ok: true, a, objective };
 }
 
+/**
+ * E7 ЕГАЛІТАРНИЙ — алгебраїчний метод.
+ *
+ * Критерій: мінімізуємо max αᵢ · |a − aᵢ|   (максимальне зважене відхилення)
+ *
+ * Алгоритм через бінарний пошук:
+ * - Шукаємо мінімальне t, при якому ВСІ інтервали [aᵢ − t/αᵢ, aᵢ + t/αᵢ] перетинаються.
+ * - Відповідь a = середина спільного перетину.
+ *
+ * Властивість: жоден експерт не може бути "дуже далеко" від колективної думки.
+ */
 function e7Egalitarian({ valuesByExpertId, alphaByExpertId }) {
-  // min_a max_i alpha_i * |a - a_i|
-  // Solve by finding minimal t such that intersection of [a_i - t/alpha_i, a_i + t/alpha_i] is non-empty.
   const points = [];
   for (const [expertId, value] of valuesByExpertId.entries()) {
     const w = alphaByExpertId.get(expertId);
@@ -95,7 +129,8 @@ function e7Egalitarian({ valuesByExpertId, alphaByExpertId }) {
     return { ok: false, error: "NO_VALUES" };
   }
 
-  // Establish an upper bound for t.
+  // Встановлюємо верхню межу для t:
+  // при t = span · minW — напевно всі інтервали перетинаються
   let minV = Infinity;
   let maxV = -Infinity;
   let minW = Infinity;
@@ -111,6 +146,7 @@ function e7Egalitarian({ valuesByExpertId, alphaByExpertId }) {
     return { ok: true, a: minV, t: 0, interval: [minV, minV] };
   }
 
+  // Перевіряє, чи існує спільний перетин інтервалів [aᵢ − t/αᵢ, aᵢ + t/αᵢ]
   function intersectionForT(t) {
     let left = -Infinity;
     let right = Infinity;
@@ -122,14 +158,14 @@ function e7Egalitarian({ valuesByExpertId, alphaByExpertId }) {
     return { left, right, ok: left <= right };
   }
 
-  // Ensure hi is feasible.
+  // Якщо hi недостатньо — подвоюємо
   for (let i = 0; i < 30; i++) {
     const inter = intersectionForT(hi);
     if (inter.ok) break;
     hi *= 2;
   }
 
-  // Binary search.
+  // Бінарний пошук мінімального t (80 ітерацій для точності)
   for (let iter = 0; iter < 80; iter++) {
     const mid = (lo + hi) / 2;
     const inter = intersectionForT(mid);
@@ -141,10 +177,21 @@ function e7Egalitarian({ valuesByExpertId, alphaByExpertId }) {
   }
 
   const { left, right } = intersectionForT(hi);
-  const a = (left + right) / 2;
+  const a = (left + right) / 2; // середина інтервалу — це відповідь
   return { ok: true, a, t: hi, interval: [left, right] };
 }
 
+/**
+ * Коефіцієнти γ для психологічних типів експертів (E2).
+ *
+ *              γ₁ (opt)  γ₂ (real)  γ₃ (pess)  γ₄
+ * Реаліст        1         4           1       36
+ * Оптиміст       3         0           2       25
+ * Песиміст       2         0           3       25
+ *
+ * aᵢ = (γ₁·opt + γ₂·real + γ₃·pess) / (γ₁+γ₂+γ₃)
+ * σᵢ² = (pess − opt)² / γ₄
+ */
 const PSYCH_TYPE = {
   realist: {
     gamma1: 1,
@@ -171,21 +218,25 @@ function getPsychTypeConfig(type) {
   return PSYCH_TYPE[key] ?? PSYCH_TYPE.realist;
 }
 
+/**
+ * Обчислення індивідуальної оцінки експерта з тріади (E2).
+ *
+ * Формули:
+ *   aᵢ    = (γ₁·opt + γ₂·real + γ₃·pess) / Σγ     — зважена середня
+ *   σᵢ²   = (pess − opt)² / γ₄                     — внутрішня невизначеність
+ */
 function e2EstimateForExpert({ optimistic, realistic, pessimistic, psychType }) {
   const cfg = getPsychTypeConfig(psychType);
   const denom = cfg.gamma1 + cfg.gamma2 + cfg.gamma3;
   const ai = (cfg.gamma1 * optimistic + cfg.gamma2 * realistic + cfg.gamma3 * pessimistic) / denom;
-  // Uncertainty inside expert estimate.
-  // The source formula references gamma4 as the uncertainty degree.
-  // Commonly interpreted as: sigma_i^2 = (spread^2) / gamma4.
   const spread = pessimistic - optimistic;
   const sigma2 = (spread * spread) / cfg.gamma4;
   return { ai, sigma2, cfg };
 }
 
-// t-critical lookup for two-sided confidence intervals: 1 - p.
-// Keys are df -> { p -> t } where p is error probability.
-// Supports typical p used in labs; add more as needed.
+// Таблиця t-критерію Стьюдента (двостороннього) для довірчих інтервалів E2.
+// Ключі: df → { p → t }, де p — ймовірність похибки.
+// t(p, df) використовується в формулі: Δ = t·σ/√n
 const T_TABLE_TWO_SIDED = {
   1: { 0.1: 6.314, 0.05: 12.706, 0.01: 63.657 },
   2: { 0.1: 2.92, 0.05: 4.303, 0.01: 9.925 },
@@ -231,6 +282,13 @@ function makeCellKey(alternativeId, criterionId) {
   return `${String(alternativeId)}-${String(criterionId)}`;
 }
 
+/**
+ * E7 — Алгебраїчний метод, матричний варіант.
+ *
+ * Проходимо по всіх комірках (alternativeId, criterionId),
+ * для кожної збираємо оцінки всіх експертів і обчислюємо узгоджене значення
+ * через утилітарний або егалітарний критерій.
+ */
 function calculateE7Matrix({ experts, expertEvaluations, variant = "utilitarian" }) {
   const alphaByExpertId = computeAlphaWeights(experts, { mode: "competence" });
   const byCell = groupByKey(expertEvaluations, (ev) =>
@@ -266,9 +324,19 @@ function calculateE7Matrix({ experts, expertEvaluations, variant = "utilitarian"
   return { ok: true, method: "E7", variant, cells };
 }
 
+/**
+ * E1 — СТАТИСТИЧНИЙ МЕТОД.
+ *
+ * Експерти ізольовані, кожен дає ОДНУ числову оцінку.
+ *
+ * Формули:
+ *   a     = Σ αᵢ · aᵢ              — зважене середнє (мат. сподівання)
+ *   σ²    = Σ αᵢ · (a − aᵢ)²        — дисперсія (степінь неузгодженості)
+ *   σ     = √σ²                     — середньоквадратичне відхилення
+ *
+ * Увага: ваги α всередині комірки нормалізуються так, щоб Σα = 1.
+ */
 function calculateE1Matrix({ experts, expertEvaluations }) {
-  // E1: a = sum(alpha_i * a_i), sigma^2 = sum(alpha_i * (a - a_i)^2)
-  // Experts are isolated, no feedback, competence weights allowed.
   const alphaByExpertId = computeAlphaWeights(experts, { mode: "competence" });
   const byCell = groupByKey(expertEvaluations, (ev) =>
     makeCellKey(ev.alternativeId, ev.criterionId)
@@ -291,19 +359,19 @@ function calculateE1Matrix({ experts, expertEvaluations }) {
 
     if (pairs.length < 1) continue;
 
-    // Normalize alpha inside the cell so weights sum to 1 for participating experts.
+    // Нормалізуємо ваги всередині комірки: α'_i = α_i / Σα
     const denom = sumAlpha > 0 ? sumAlpha : pairs.length;
     let a = 0;
     for (const p of pairs) {
       const w = sumAlpha > 0 ? p.alpha / denom : 1 / pairs.length;
-      a += w * p.value;
+      a += w * p.value;      // a = Σ wⱼ · valueⱼ
     }
 
     let sigma2 = 0;
     for (const p of pairs) {
       const w = sumAlpha > 0 ? p.alpha / denom : 1 / pairs.length;
       const d = a - p.value;
-      sigma2 += w * d * d;
+      sigma2 += w * d * d;   // σ² = Σ wⱼ · (a − valueⱼ)²
     }
 
     const [alternativeId, criterionId] = cellKey.split("-");
@@ -323,6 +391,25 @@ function calculateE1Matrix({ experts, expertEvaluations }) {
   return { ok: true, method: "E1", cells };
 }
 
+/**
+ * E2 — СТАТИСТИЧНИЙ МЕТОД З ТРІАДАМИ.
+ *
+ * Кожен експерт дає ТРИ оцінки: оптимістичну, реалістичну, песимістичну.
+ *
+ * Крок 1 — індивідуальна оцінка експерта (e2EstimateForExpert):
+ *   aᵢ    = (γ₁·opt + γ₂·real + γ₃·pess) / Σγ    — зважена за психотипом
+ *   σᵢ²   = (pess − opt)² / γ₄                    — внутрішня невизначеність
+ *
+ * Крок 2 — агрегація:
+ *   a     = Σ αᵢ · aᵢ                                          — узгоджена оцінка
+ *   σ²    = Σ αᵢ · σᵢ²  +  Σ αᵢ · (a − aᵢ)²                   — загальна дисперсія
+ *           \________/    \_______________/
+ *           внутрішня      зовнішня (розбіжність)
+ *
+ * Крок 3 — довірчий інтервал (опціонально, через t-критерій Стьюдента):
+ *   Δ = t(p, n−1) · σ / √n
+ *   Інтервал: [a − Δ, a + Δ]
+ */
 function calculateE2Matrix({ experts, expertTriads, p = null }) {
   const alphaByExpertId = computeAlphaWeights(experts, { mode: "competence" });
   const expertsById = new Map(experts.map((e) => [String(e._id), e]));
@@ -343,8 +430,8 @@ function calculateE2Matrix({ experts, expertTriads, p = null }) {
       const realistic = clampNumber(t.realistic);
       const pessimistic = clampNumber(t.pessimistic);
       if (optimistic == null || realistic == null || pessimistic == null) continue;
+      // Вимога: opt ≤ real ≤ pess (інакше тріада некоректна)
       if (!(optimistic <= realistic && realistic <= pessimistic)) {
-        // Keep rule strict; if inputs violate triangle ordering, skip.
         continue;
       }
 
@@ -359,18 +446,20 @@ function calculateE2Matrix({ experts, expertTriads, p = null }) {
       expertEstimates.push({ eid, alpha, ai, sigma2, cfg });
     }
 
-    if (expertEstimates.length < 2) continue;
+    if (expertEstimates.length < 2) continue; // потрібно мінімум 2 експерти для коректної оцінки
 
     const n = expertEstimates.length;
     let a = 0;
     for (const e of expertEstimates) {
-      a += e.alpha * e.ai;
+      a += e.alpha * e.ai;                   // a = Σ αᵢ · aᵢ
     }
 
     let sigma2 = 0;
+    // Внутрішня дисперсія: Σ αᵢ · σᵢ² (невпевненість кожного експерта)
     for (const e of expertEstimates) {
       sigma2 += e.alpha * e.sigma2;
     }
+    // Зовнішня дисперсія: Σ αᵢ · (a − aᵢ)² (розбіжність думок)
     for (const e of expertEstimates) {
       const d = a - e.ai;
       sigma2 += e.alpha * d * d;
@@ -378,6 +467,7 @@ function calculateE2Matrix({ experts, expertTriads, p = null }) {
 
     const sigma = Math.sqrt(sigma2);
 
+    // Довірчий інтервал: Δ = t·σ/√n
     let confidence = null;
     if (p != null) {
       const pNum = clampNumber(p, { min: 0.000001, max: 0.5 });
